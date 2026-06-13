@@ -1,0 +1,33 @@
+# ─── private planning artefacts — local only ───
+.planning/
+
+# ─── OS / editor ───
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# ─── Go build/runtime ───
+/ocu-admin
+*.bin
+cover.out
+*.coverprofile
+
+# ─── node / vite build (web/) ───
+node_modules/
+web/dist/
+web/.vite/
+*.tsbuildinfo
+
+# ─── coverage / test artifacts ───
+coverage/
+test-results/
+playwright-report/
+
+# ─── env ───
+.env
+.env.*
+!.env.example
+
+# ─── local-only Claude Code instructions ───
+CLAUDE.local.md
