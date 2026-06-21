@@ -1,0 +1,44 @@
+{
+  "name": "ocu-admin-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "knip": "knip --no-progress",
+    "depcruise": "depcruise --config .dependency-cruiser.cjs src",
+    "sober": "sober scan . --fail-on hungover",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage"
+  },
+  "dependencies": {
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "@types/node": "24.13.2",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "eslint": "10.5.0",
+    "@eslint/js": "10.0.1",
+    "typescript-eslint": "8.61.1",
+    "eslint-config-next": "16.2.9",
+    "prettier": "3.8.4",
+    "tailwindcss": "4.3.1",
+    "@tailwindcss/postcss": "4.3.1",
+    "knip": "6.17.1",
+    "dependency-cruiser": "17.4.3",
+    "vitest": "4.1.9",
+    "@vitest/coverage-v8": "4.1.9",
+    "sober": "1.1.10",
+    "@stryker-mutator/core": "9.6.1",
+    "@stryker-mutator/vitest-runner": "9.6.1"
+  }
+}
