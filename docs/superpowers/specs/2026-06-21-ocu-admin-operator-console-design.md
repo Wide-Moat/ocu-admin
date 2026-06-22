@@ -4,8 +4,12 @@
 # ocu-admin — read-only operator console — design
 
 **Status:** design, pending owner review
-**Frozen upstream contract:** ADR-0022 (admin read-surface), branch
-`feat/admin-read-surface-contract` @ `a8064807` in `Wide-Moat/open-computer-use`.
+**Upstream read-surface contract:** ADR-0022 (admin read-surface) — drafted, NOT
+yet ratified (`status: proposed` on the unmerged branch
+`feat/admin-read-surface-contract` @ `a8064807` in `Wide-Moat/open-computer-use`;
+that sha is not `next/v1` canon). The shape is **not frozen**. Read-surface code
+is gated on ADR-0022 `status: accepted` on `next/v1`; named-read-identity code is
+additionally gated on ADR-0004 accepted on `next/v1`.
 **Date:** 2026-06-21
 
 ## 1. What this is
@@ -40,8 +44,11 @@ design; they are not negotiable in this repo.
    hash from config/env (NFR-SEC-84). A first-party `SameSite=Strict` HttpOnly
    cookie. No OIDC, no `next-auth`, no user management. No session without a
    valid cookie → 401, no fallback.
-5. **No invented data.** Types are generated from the frozen ADR-0022 shape. The
-   mock reflects exactly that shape and invents no fields.
+5. **No invented data, never ahead of canon.** Type generation is BLOCKED until
+   ADR-0022 ratifies (`status: accepted` on `next/v1`); the shape is not frozen,
+   so types are not generated from the unmerged draft. Until then the only data
+   source is a checked-in fixture. Once ratified, types come from the ratified
+   ADR-0022 shape and the mock reflects exactly that shape, inventing no fields.
 
 Accepted limitations (recorded in ADR-0022, surfaced honestly in the UI, not
 hidden and not papered over with fake personalization):
@@ -52,44 +59,49 @@ hidden and not papered over with fake personalization):
 - **Operator-sees-all** — the console projects every session in the deployment;
   no per-operator scoping of the read.
 
-## 3. The frozen data contract (ADR-0022)
+## 3. The drafted data contract (ADR-0022 — not yet ratified)
+
+This is the **drafted** shape from ADR-0022 (`status: proposed`, unmerged). It is
+NOT frozen and may change before ratification; it is recorded here to design
+against, not to generate types from until ADR-0022 is accepted on `next/v1`.
 
 The BFF speaks these endpoints to `ocu-control` over the operator UDS. The
 browser speaks the same shapes to the BFF over HTTPS.
 
 ```ts
 type SessionView = {
-  key: string
-  owner: { tenant: string; caller: string }
-  state: "reserved" | "active" | "released"   // lowercase, exact
-  container_name?: string   // bound after activation; absent until then
-  caps?: {                  // activation enrichment; absent until active
-    cpu_cores: number
-    memory_bytes: number
-    pids_limit?: number
-  }
-  reserved_at: string       // ISO; ALWAYS present
-  active_at?: string        // ISO; absent until the row reaches active
-}
+  key: string;
+  owner: { tenant: string; caller: string };
+  state: "reserved" | "active" | "released"; // lowercase, exact
+  container_name?: string; // bound after activation; absent until then
+  caps?: {
+    // activation enrichment; absent until active
+    cpu_cores: number;
+    memory_bytes: number;
+    pids_limit?: number;
+  };
+  reserved_at: string; // ISO; ALWAYS present
+  active_at?: string; // ISO; absent until the row reaches active
+};
 
 type DeploymentView = {
-  runtime_tier: "runc" | "gvisor" | "firecracker"   // deployment-wide singleton
-  runtime_provider: "docker" | "k8s"                // deployment-wide singleton
-}
+  runtime_tier: "runc" | "gvisor" | "firecracker"; // deployment-wide singleton
+  runtime_provider: "docker" | "k8s"; // deployment-wide singleton
+};
 ```
 
 Endpoints (all GET, through the BFF):
 
-| Endpoint | Returns | Notes |
-|---|---|---|
-| `GET /v1alpha/sessions` | `SessionView[]` | `?include_released` adds RELEASED tombstones |
-| `GET /v1alpha/sessions/{key}` | `SessionView` \| 404 | single enriched row |
-| `GET /v1alpha/deployment` | `DeploymentView` | deployment-wide singletons |
-| `GET /metrics` | Prometheus text | counts-by-state, create/destroy, reserved→active histogram |
-| `GET /v1alpha/events` | `text/event-stream` | **future additive, not frozen** — poll first |
+| Endpoint                      | Returns              | Notes                                                      |
+| ----------------------------- | -------------------- | ---------------------------------------------------------- |
+| `GET /v1alpha/sessions`       | `SessionView[]`      | `?include_released` adds RELEASED tombstones               |
+| `GET /v1alpha/sessions/{key}` | `SessionView` \| 404 | single enriched row                                        |
+| `GET /v1alpha/deployment`     | `DeploymentView`     | deployment-wide singletons                                 |
+| `GET /metrics`                | Prometheus text      | counts-by-state, create/destroy, reserved→active histogram |
+| `GET /v1alpha/events`         | `text/event-stream`  | **future additive, not frozen** — poll first               |
 
-**State → UI label mapping:** `reserved` → *Creating*, `active` → *Live*,
-`released` → *Destroyed*.
+**State → UI label mapping:** `reserved` → _Creating_, `active` → _Live_,
+`released` → _Destroyed_.
 
 **Derived values (never from a row):**
 
@@ -117,11 +129,11 @@ tool, not a marketing page — dense but breathing.
 
 **Lifecycle color coding:**
 
-| State | Label | Color | Motion |
-|---|---|---|---|
-| `reserved` | Creating | amber | pulsing dot (being built) |
-| `active` | Live | emerald | steady glow |
-| `released` | Destroyed | zinc | muted, no pulse (tombstone) |
+| State      | Label     | Color   | Motion                      |
+| ---------- | --------- | ------- | --------------------------- |
+| `reserved` | Creating  | amber   | pulsing dot (being built)   |
+| `active`   | Live      | emerald | steady glow                 |
+| `released` | Destroyed | zinc    | muted, no pulse (tombstone) |
 
 ### Session card (the primitive)
 
@@ -181,19 +193,21 @@ Authored in `.planning/` by direct Write/Edit (not `gsd-tools phase add` — it
 renumbers plan IDs and strips prose; fleet lesson).
 
 1. **Scaffold + CI gates + live constitution rules** (PR-1). Next.js App Router
-   + TS, Tailwind + shadcn/ui, directory structure, BFF seam, import-boundary
-   rule, and all gates that pass green on a scaffold tree with no app code:
-   gitleaks (wire the committed `.gitleaks.toml`), `tsc --noEmit`,
-   ESLint + Prettier, dependency-cruiser import-boundary, knip, semgrep
-   (`scan --error`), sober (`--fail-on hungover`), vitest + v8 coverage
-   **report-only** (floor 0, not blocking on an empty tree). CONSTITUTION rules
-   live from this commit (the gates ARE their enforcement).
+   - TS, Tailwind + shadcn/ui, directory structure, BFF seam, import-boundary
+     rule, and all gates that pass green on a scaffold tree with no app code:
+     gitleaks (wire the committed `.gitleaks.toml`), `tsc --noEmit`,
+     ESLint + Prettier, dependency-cruiser import-boundary, knip, semgrep
+     (`scan --error`), sober (`--fail-on hungover`), vitest + v8 coverage
+     **report-only** (floor 0, not blocking on an empty tree). CONSTITUTION rules
+     live from this commit (the gates ARE their enforcement).
 2. **Auth** — bcrypt verify + `SameSite=Strict` HttpOnly cookie, 401 no
    fallback, route-handler/middleware gate. Flip coverage ≥80% threshold and
    turn on Stryker ≥60% on the auth path (this is where that code first exists).
 3. **Dashboard UI (pro-max)** — live cards, lifecycle transitions, two stats
    tiles, deployment badge, dark theme, Grafana link, 503/empty/loading states.
-4. **Mock-contract BFF client** — types generated from ADR-0022, mock BFF with
+4. **Mock-contract BFF client** — GATED on ADR-0022 `status: accepted` on
+   `next/v1`; type generation is BLOCKED until then (the shape is not frozen).
+   Once unblocked: types from the ratified ADR-0022 shape, mock BFF with
    polling + lifecycle simulation, 503/`BoundedReason` handling.
 5. **Flip mock → real per-endpoint** — as `pjyjol0z` lands `/sessions`,
    `/{key}`, `/deployment`, `/metrics`. Depends on upstream; decoupled by the
@@ -218,8 +232,10 @@ Each is enforced by a PR-1 gate; each gets a mutation-proof in phase 6.
    asserts the client bundle is free of the UDS path / cred markers.
 3. **Never anonymous** — bcrypt cookie `SameSite=Strict` HttpOnly; no session
    without a valid cookie → 401, no fallback. Guard: auth middleware test.
-4. **Never invented data** — types are generated from the frozen contract; the
-   mock mirrors exactly its shape. Guard: type-gen from ADR-0022 + a shape test.
+4. **Never invented data, never ahead of canon** — type generation is BLOCKED
+   until ADR-0022 ratifies (`status: accepted` on `next/v1`); the shape is not
+   frozen, so no types from the unmerged draft. Fixture-only until then. Guard:
+   the hard-ordering gate + type-gen from the ratified contract + a shape test.
 5. **Never new control-plane state** — the console projects what the control
    plane reports; it owns no mutable state. Guard: the all-GET surface + the
    import boundary.
