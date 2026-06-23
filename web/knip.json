@@ -9,8 +9,6 @@
     "@stryker-mutator/core",
     "@stryker-mutator/vitest-runner",
     "eslint-config-next",
-    "tailwindcss",
-    "sober"
-  ],
-  "ignoreBinaries": ["sober"]
+    "tailwindcss"
+  ]
 }

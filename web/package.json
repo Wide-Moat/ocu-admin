@@ -12,7 +12,6 @@
     "format:check": "prettier --check .",
     "knip": "knip --no-progress",
     "depcruise": "depcruise --config .dependency-cruiser.cjs src",
-    "sober": "sober scan . --fail-on hungover",
     "test": "vitest run",
     "test:cov": "vitest run --coverage"
   },
@@ -37,7 +36,6 @@
     "globals": "16.4.0",
     "knip": "6.17.1",
     "prettier": "3.8.4",
-    "sober": "1.1.10",
     "tailwindcss": "4.3.1",
     "typescript": "6.0.3",
     "typescript-eslint": "8.61.1",

@@ -70,3 +70,17 @@ The coverage threshold (≥80%) and mutation gate (Stryker ≥60%) are code-coup
 They are scaffolded report-only / deferred until the auth phase, where their
 load-bearing code first exists, and are flipped to blocking there. A threshold
 on an empty tree is theater, not a guard.
+
+## Verification discipline
+
+**Exit criteria are verified on a clean tree firsthand.** `git stash -u` and run
+each gate on an untouched checkout. Never declare a criterion met because a plan
+says so. A gate that is red on a clean checkout while the criterion claims "all
+exit 0" is a fake guard; this surfaces when CI runs what a developer claimed was
+green.
+
+**Every security guard is proven non-vacuous by hand-mutation.** Flip the guard
+(e.g. inject a contrived violation into the rule's domain), run the gate, and
+watch it go RED. Revert the mutation and confirm green again. A green test that
+survives a mutation of the thing it guards does not count as a guard; it is a
+vacuous test. Vacuous gates do not prevent the thing they claim to prevent.

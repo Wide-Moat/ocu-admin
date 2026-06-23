@@ -20,10 +20,10 @@ mutation gates are deferred to the auth phase where their code lands.
 **Tech Stack (pinned, verified on npm 2026-06-21):** next@16.2.9,
 typescript@6.0.3, eslint@10.5.0, typescript-eslint@8.61.1, prettier@3.8.4,
 tailwindcss@4.3.1, knip@6.17.1, dependency-cruiser@17.4.3, vitest@4.1.9,
-@vitest/coverage-v8@4.1.9, sober@1.1.10, @stryker-mutator/core@9.6.1 +
+@vitest/coverage-v8@4.1.9, @stryker-mutator/core@9.6.1 +
 @stryker-mutator/vitest-runner@9.6.1 (scaffolded, deferred). semgrep@1.167.0
 runs via pip/container in CI (not an npm dep). gitleaks uses the committed
-`.gitleaks.toml`. Node 24.
+`.gitleaks.toml`. vale and lychee run on tracked .md (doc-discipline, no TS-code gate). Node 24.
 
 ---
 
@@ -40,7 +40,6 @@ web/
   .dependency-cruiser.cjs   # import-boundary rules (read module ↛ authority)
   vitest.config.ts          # vitest + v8 coverage (report-only floor 0)
   stryker.config.json       # mutation config (scaffolded, deferred)
-  .soberrc.json             # AI-slop scanner config
   src/
     app/
       layout.tsx            # root layout (dark theme shell)
@@ -122,7 +121,6 @@ git commit -m "chore: drop Go-template lines from .gitignore (this is a TS repo)
     "format:check": "prettier --check .",
     "knip": "knip --no-progress",
     "depcruise": "depcruise --config .dependency-cruiser.cjs src",
-    "sober": "sober scan . --fail-on hungover",
     "test": "vitest run",
     "test:cov": "vitest run --coverage"
   },
@@ -147,7 +145,6 @@ git commit -m "chore: drop Go-template lines from .gitignore (this is a TS repo)
     "dependency-cruiser": "17.4.3",
     "vitest": "4.1.9",
     "@vitest/coverage-v8": "4.1.9",
-    "sober": "1.1.10",
     "@stryker-mutator/core": "9.6.1",
     "@stryker-mutator/vitest-runner": "9.6.1"
   }
@@ -571,12 +568,18 @@ git commit -m "feat: vitest + bundle-secrecy guard (no UDS marker in client tree
 
 ---
 
-## Task 5: Wire knip (dead-code) and sober (AI-slop)
+## Task 5: Wire knip (dead-code) and the doc-discipline gates (vale + lychee)
 
 **Files:**
 
 - Create: `web/knip.json`
-- Create: `web/.soberrc.json`
+- Create: `.vale.ini`, `.vale/styles/Architecture/{banned-vocab,banned-phrases,marketing-tone}.yml`, `lychee.toml`
+
+There is NO TS-code AI-slop gate — that is doc-discipline only (canon
+CLAUDE.md:159). The fleet's real doc linters are `vale` (banned-vocab /
+banned-phrases / marketing-tone) + `lychee` (broken links), run on tracked
+markdown, not on TypeScript. (The earlier `sober` gate was a hallucinated
+placeholder: npm `sober@1.1.10` is a Material-You UI library, not a scanner.)
 
 - [ ] **Step 1: Write `web/knip.json` with declared entrypoints**
 
@@ -611,29 +614,25 @@ Run: `cd web && npm run knip`
 Expected: exit 0 on the scaffold tree. If anything is flagged, record it for the
 owner list; do NOT delete framework entrypoints or public API.
 
-- [ ] **Step 3: Write `web/.soberrc.json`**
+- [ ] **Step 3: Mirror the fleet doc-lint config (vale + lychee)**
 
-```json
-{
-  "failOn": "hungover",
-  "ignore": ["node_modules", ".next", "coverage", "dist"]
-}
-```
+Copy `.vale.ini`, `.vale/styles/Architecture/{banned-vocab,banned-phrases,marketing-tone}.yml`,
+and `lychee.toml` verbatim from canon (`Wide-Moat/open-computer-use`) — one
+banlist across all repos, do not edit the lists. Keep `TokenIgnores` /
+`BlockIgnores` as-is so vale skips SPDX comments and code blocks. vale runs at
+fail-level=error on operator-facing top-level docs (README, CONSTITUTION,
+CONTRIBUTING, SECURITY, CODE_OF_CONDUCT) and warning-only on `docs/superpowers/**`.
 
-NOTE: verify `sober`'s real config keys + CLI flags at execution time
-(`npx sober --help`); pin the config to what the installed 1.1.10 accepts. If
-the flag/key names differ, adjust to the real ones — do not invent.
+- [ ] **Step 4: Run vale + lychee on tracked markdown, expect clean**
 
-- [ ] **Step 4: Run sober — record the starting score, expect GREEN**
-
-Run: `cd web && npm run sober`
-Expected: exit 0 (below `hungover`). Record the starting rung in the PR.
+Run vale against the error-scope docs and lychee against tracked `.md`.
+Expected: exit 0. Record any starting findings in the PR.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add web/knip.json web/.soberrc.json
-git commit -m "feat: wire knip (dead-code) and sober (AI-slop) gates"
+git add web/knip.json .vale.ini .vale/ lychee.toml
+git commit -m "feat: wire knip (dead-code) + vale/lychee (doc-discipline) gates"
 ```
 
 ---
@@ -732,8 +731,10 @@ jobs:
       - run: npm run format:check
       - run: npm run depcruise
       - run: npm run knip
-      - run: npm run sober
       - run: npm run test:cov # report-only until source lands
+  # Doc-discipline (separate job, repo-root markdown): vale (error on
+  # operator-facing top-level docs, warning on docs/superpowers) + lychee
+  # (broken links on tracked .md). Mirrors the fleet docs-lint workflow.
 ```
 
 NOTE: pin `gitleaks-action` and `setup-node`/`checkout` to the SHAs the fleet
@@ -749,7 +750,7 @@ validator available). Expected: valid YAML.
 
 ```bash
 git add .github/workflows/ci.yml
-git commit -m "ci: blocking gate set (gitleaks, semgrep, tsc, eslint, prettier, depcruise, knip, sober, vitest)"
+git commit -m "ci: blocking gate set (gitleaks, semgrep, tsc, eslint, prettier, depcruise, knip, vitest) + doc-discipline (vale, lychee)"
 ```
 
 ---
@@ -892,13 +893,14 @@ Append (do not rewrite the existing file):
 Local pre-commit run (all must pass):
 
     cd web && npm run typecheck && npm run lint && npm run format:check \
-      && npm run depcruise && npm run knip && npm run sober && npm run test:cov
+      && npm run depcruise && npm run knip && npm run test:cov
 
 Blocking CI (`.github/workflows/ci.yml`): gitleaks (committed `.gitleaks.toml`),
 semgrep (`scan --config p/typescript p/react p/nextjs p/owasp-top-ten --error`),
 tsc `--noEmit`, eslint, prettier `--check`, dependency-cruiser import-boundary,
-knip, sober (`--fail-on hungover`), vitest + v8 coverage (report-only until
-source lands).
+knip, vitest + v8 coverage (report-only until source lands). Doc-discipline
+(tracked `.md`): vale (banned-vocab / banned-phrases / marketing-tone) + lychee
+(broken links).
 
 Forbidden: god files; empty `catch {}`; dead / commented-out code; duplication
 instead of reuse; production stubs; a read-only client importing a mutating
@@ -909,8 +911,10 @@ New code ships with tests. The auth path and the import-boundary guard carry
 bypass.
 
 Tool → language map (this is the only non-Go repo in the fleet — TypeScript /
-Next.js tooling ONLY): knip, semgrep, Stryker, sober, vitest, eslint, tsc,
+Next.js tooling ONLY): knip, semgrep, Stryker, vitest, eslint, tsc,
 dependency-cruiser, prettier. NO Go / Rust / Python linters or mutation tools.
+Doc-discipline (tracked `.md` only): vale + lychee; no TS-code AI-slop gate per
+canon CLAUDE.md:159.
 
 Coverage-threshold and mutation gates activate only once their app code is
 cleared to land (auth phase) — see CONSTITUTION.md "Activation rule".
@@ -933,10 +937,12 @@ Run:
 
 ```bash
 cd web && npm run typecheck && npm run lint && npm run format:check \
-  && npm run depcruise && npm run knip && npm run sober && npm run test:cov
+  && npm run depcruise && npm run knip && npm run test:cov
 ```
 
-Expected: every command exits 0. Fix anything red before proceeding.
+Expected: every command exits 0. Fix anything red before proceeding. Verify each
+gate firsthand on a clean tree (`git stash -u`), not by declaration — see
+CONSTITUTION.md "Verification discipline".
 
 - [ ] **Step 2: Push the branch**
 
@@ -955,7 +961,7 @@ PR body MUST include: the installed+pinned versions, the files added, the local
 commands, the ambiguous-dead-code owner list (if any), the per-gate RED→green
 proof (depcruise + bundle-secrecy shown; coverage/Stryker noted as
 scaffolded/deferred to the auth phase), and a BEFORE/AFTER snapshot (dead
-exports, semgrep findings, sober score, coverage %).
+exports, semgrep findings, vale/lychee findings, coverage %).
 
 - [ ] **Step 4: HOLD for owner merge command**
 
@@ -970,9 +976,10 @@ any merge to public main. "gates green" is not authorization.
   bundle-secrecy (Task 4) ✓; all PR-1 gates (Tasks 3–8) ✓; constitution live
   (Task 9, 10) ✓; deferred coverage/Stryker named (Task 6, 9) ✓; merge-discipline
   HOLD (Task 11) ✓. Auth, dashboard UI, mock-BFF, flip-to-real = later phases,
-  out of this plan by design.
-- **Placeholder scan:** version-verify notes (react/@types, sober flags) are
-  explicit "verify at execution, do not float" guards, not silent TODOs.
+  out of this plan by design. Sober (Material-You UI, not a gate) removed;
+  doc-discipline (vale/lychee on tracked `.md`) wired in its place.
+- **Placeholder scan:** version-verify notes (react/@types) are explicit
+  "verify at execution, do not float" guards, not silent TODOs.
 - **Type consistency:** gate script names (`typecheck`/`lint`/`format:check`/
-  `depcruise`/`knip`/`sober`/`test`/`test:cov`) match across package.json, CI,
+  `depcruise`/`knip`/`test`/`test:cov`) match across package.json, CI,
   CLAUDE.md, and the plan.

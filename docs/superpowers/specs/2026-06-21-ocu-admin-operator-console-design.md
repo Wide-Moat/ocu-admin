@@ -197,7 +197,7 @@ renumbers plan IDs and strips prose; fleet lesson).
      rule, and all gates that pass green on a scaffold tree with no app code:
      gitleaks (wire the committed `.gitleaks.toml`), `tsc --noEmit`,
      ESLint + Prettier, dependency-cruiser import-boundary, knip, semgrep
-     (`scan --error`), sober (`--fail-on hungover`), vitest + v8 coverage
+     (`scan --error`), vitest + v8 coverage
      **report-only** (floor 0, not blocking on an empty tree). CONSTITUTION rules
      live from this commit (the gates ARE their enforcement).
 2. **Auth** — bcrypt verify + `SameSite=Strict` HttpOnly cookie, 401 no
