@@ -16,10 +16,10 @@ exclude_path = [
   ".planning",
 ]
 
-# Check anchor fragments (#section) on relative links — a forward reference to a
-# missing anchor is a broken link. (lychee >= 0.18 renamed this; the value is an
-# enum, not a bool.)
-include_fragments = "anchor-only"
+# (Anchor-fragment checking is intentionally omitted: its config key differs
+# between lychee versions — a bool in <=0.23, an enum in >=0.24 — and pinning the
+# newer binary breaks the action's installer. The forward-reference rule we care
+# about is "a relative link to a missing file is broken", which needs no flag.)
 
 # Patterns to allow without HTTP checking (anchor-only refs, mailto, etc.).
 exclude = [
