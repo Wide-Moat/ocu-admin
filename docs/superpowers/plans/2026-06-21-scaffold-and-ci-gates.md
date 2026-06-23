@@ -67,6 +67,7 @@ CLAUDE.md                   # append: gates, forbidden list, tool→language map
 ## Task 1: Clean `.gitignore` of the Go-template remnant
 
 **Files:**
+
 - Modify: `/Users/nick/ocu-admin/.gitignore`
 
 - [ ] **Step 1: Remove the Go build/runtime block**
@@ -96,6 +97,7 @@ git commit -m "chore: drop Go-template lines from .gitignore (this is a TS repo)
 ## Task 2: Scaffold the Next.js app under `web/`
 
 **Files:**
+
 - Create: `web/package.json`
 - Create: `web/tsconfig.json`
 - Create: `web/next.config.ts`
@@ -194,13 +196,13 @@ If any pinned version 404s, STOP and report — do not substitute.
 // SPDX-License-Identifier: FSL-1.1-Apache-2.0
 // Copyright (c) 2025 Open Computer Use Contributors
 
-import type { NextConfig } from "next"
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-}
+};
 
-export default nextConfig
+export default nextConfig;
 ```
 
 - [ ] **Step 5: Write `web/.prettierrc.json`**
@@ -220,18 +222,19 @@ export default nextConfig
 // SPDX-License-Identifier: FSL-1.1-Apache-2.0
 // Copyright (c) 2025 Open Computer Use Contributors
 
-import type { Metadata } from "next"
-import "./globals.css"
+import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "OCU Operator Console",
-  description: "Read-only operator console for an Open Computer Use deployment.",
-}
+  description:
+    "Read-only operator console for an Open Computer Use deployment.",
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" className="dark">
@@ -239,7 +242,7 @@ export default function RootLayout({
         {children}
       </body>
     </html>
-  )
+  );
 }
 ```
 
@@ -269,7 +272,7 @@ export default function Home() {
         dashboard under construction.
       </p>
     </main>
-  )
+  );
 }
 ```
 
@@ -281,9 +284,9 @@ export default function Home() {
 
 const config = {
   plugins: { "@tailwindcss/postcss": {} },
-}
+};
 
-export default config
+export default config;
 ```
 
 - [ ] **Step 10: Verify the build and typecheck pass**
@@ -307,6 +310,7 @@ a mutating authority. We create the directory structure that the rule pins, then
 prove the rule fires RED when violated.
 
 **Files:**
+
 - Create: `web/src/lib/read/.gitkeep`
 - Create: `web/src/lib/authority/README.md`
 - Create: `web/.dependency-cruiser.cjs`
@@ -355,7 +359,7 @@ module.exports = {
     tsConfig: { fileName: "tsconfig.json" },
     doNotFollow: { path: "node_modules" },
   },
-}
+};
 ```
 
 - [ ] **Step 3: Write `web/eslint.config.mjs` with the boundary zone**
@@ -364,8 +368,8 @@ module.exports = {
 // SPDX-License-Identifier: FSL-1.1-Apache-2.0
 // Copyright (c) 2025 Open Computer Use Contributors
 
-import js from "@eslint/js"
-import tseslint from "typescript-eslint"
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   js.configs.recommended,
@@ -388,7 +392,7 @@ export default tseslint.config(
     },
   },
   { ignores: [".next/**", "node_modules/**"] },
-)
+);
 ```
 
 - [ ] **Step 4: Write the import-boundary test (RED-proof harness)**
@@ -399,8 +403,8 @@ export default tseslint.config(
 // SPDX-License-Identifier: FSL-1.1-Apache-2.0
 // Copyright (c) 2025 Open Computer Use Contributors
 
-import { execSync } from "node:child_process"
-import { describe, it, expect } from "vitest"
+import { execSync } from "node:child_process";
+import { describe, it, expect } from "vitest";
 
 describe("import boundary", () => {
   it("depcruise passes on the clean tree", () => {
@@ -409,9 +413,9 @@ describe("import boundary", () => {
       execSync("npx depcruise --config .dependency-cruiser.cjs src", {
         stdio: "pipe",
       }),
-    ).not.toThrow()
-  })
-})
+    ).not.toThrow();
+  });
+});
 ```
 
 - [ ] **Step 5: Run depcruise on the clean tree — expect PASS**
@@ -461,6 +465,7 @@ tree) contains no UDS-socket marker — and is written so it goes RED if one is
 introduced.
 
 **Files:**
+
 - Create: `web/vitest.config.ts`
 - Test: `web/src/__tests__/bundle-secrecy.test.ts`
 
@@ -470,7 +475,7 @@ introduced.
 // SPDX-License-Identifier: FSL-1.1-Apache-2.0
 // Copyright (c) 2025 Open Computer Use Contributors
 
-import { defineConfig } from "vitest/config"
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
@@ -483,7 +488,7 @@ export default defineConfig({
       // auth phase, where the first load-bearing source lands.
     },
   },
-})
+});
 ```
 
 - [ ] **Step 2: Write the bundle-secrecy test**
@@ -494,37 +499,37 @@ export default defineConfig({
 // SPDX-License-Identifier: FSL-1.1-Apache-2.0
 // Copyright (c) 2025 Open Computer Use Contributors
 
-import { readdirSync, readFileSync, statSync } from "node:fs"
-import { join } from "node:path"
-import { describe, it, expect } from "vitest"
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { describe, it, expect } from "vitest";
 
 // The operator plane is a Unix socket; its path must never reach the client
 // tree (src/app). This walks the client source and asserts no UDS-socket
 // marker is present. Flip RED if a .sock path or operator-socket env leaks in.
-const UDS_MARKERS = [/\.sock\b/, /operator[_-]?socket/i, /SO_PEERCRED/]
+const UDS_MARKERS = [/\.sock\b/, /operator[_-]?socket/i, /SO_PEERCRED/];
 
 function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
-    const p = join(dir, name)
-    return statSync(p).isDirectory() ? walk(p) : [p]
-  })
+    const p = join(dir, name);
+    return statSync(p).isDirectory() ? walk(p) : [p];
+  });
 }
 
 describe("bundle secrecy", () => {
   it("the client tree (src/app) carries no UDS-socket marker", () => {
     const files = walk(join(process.cwd(), "src/app")).filter((f) =>
       /\.(ts|tsx)$/.test(f),
-    )
+    );
     for (const f of files) {
-      const body = readFileSync(f, "utf8")
+      const body = readFileSync(f, "utf8");
       for (const marker of UDS_MARKERS) {
         expect(marker.test(body), `${f} contains UDS marker ${marker}`).toBe(
           false,
-        )
+        );
       }
     }
-  })
-})
+  });
+});
 ```
 
 - [ ] **Step 3: Run the tests — expect PASS**
@@ -569,6 +574,7 @@ git commit -m "feat: vitest + bundle-secrecy guard (no UDS marker in client tree
 ## Task 5: Wire knip (dead-code) and sober (AI-slop)
 
 **Files:**
+
 - Create: `web/knip.json`
 - Create: `web/.soberrc.json`
 
@@ -639,6 +645,7 @@ and the import-boundary guard, which do not exist yet. It activates in the auth
 phase.
 
 **Files:**
+
 - Create: `web/stryker.config.json`
 
 - [ ] **Step 1: Write `web/stryker.config.json`**
@@ -650,10 +657,7 @@ phase.
   "testRunner": "vitest",
   "reporters": ["html", "clear-text", "progress"],
   "coverageAnalysis": "perTest",
-  "mutate": [
-    "src/lib/auth/**/*.ts",
-    "src/lib/read/**/*.ts"
-  ],
+  "mutate": ["src/lib/auth/**/*.ts", "src/lib/read/**/*.ts"],
   "thresholds": { "high": 80, "low": 60, "break": 60 }
 }
 ```
@@ -673,6 +677,7 @@ git commit -m "chore: scaffold Stryker config (deferred to auth phase)"
 ## Task 7: The blocking CI workflow `ci.yml`
 
 **Files:**
+
 - Create: `.github/workflows/ci.yml`
 
 - [ ] **Step 1: Write `.github/workflows/ci.yml`**
@@ -728,7 +733,7 @@ jobs:
       - run: npm run depcruise
       - run: npm run knip
       - run: npm run sober
-      - run: npm run test:cov   # report-only until source lands
+      - run: npm run test:cov # report-only until source lands
 ```
 
 NOTE: pin `gitleaks-action` and `setup-node`/`checkout` to the SHAs the fleet
@@ -752,6 +757,7 @@ git commit -m "ci: blocking gate set (gitleaks, semgrep, tsc, eslint, prettier, 
 ## Task 8: The pre-release workflow `pre-release.yml` (Stryker, deferred)
 
 **Files:**
+
 - Create: `.github/workflows/pre-release.yml`
 
 - [ ] **Step 1: Write `.github/workflows/pre-release.yml`**
@@ -802,6 +808,7 @@ git commit -m "ci: scaffold pre-release Stryker workflow (activates in auth phas
 ## Task 9: CONSTITUTION.md — the five "never"s, live now
 
 **Files:**
+
 - Create: `/Users/nick/ocu-admin/CONSTITUTION.md`
 
 - [ ] **Step 1: Write `CONSTITUTION.md`**
@@ -836,12 +843,15 @@ A bcrypt-verified operator credential + a `SameSite=Strict` HttpOnly cookie. No
 session without a valid cookie → 401, no fallback. **Guard:** the auth
 middleware test (lands in the auth phase).
 
-## 4. Never invented data
+## 4. Never invented data, never ahead of canon
 
-Types are generated from the frozen contract (ADR-0022). The mock and the UI
-reflect exactly that shape and invent no fields, and no UI element implies a
-capability the canon does not have (no fake multi-operator RBAC). **Guard:**
-type generation from the contract + a shape test.
+Type generation is BLOCKED until ADR-0022 ratifies (`status: accepted` on
+`next/v1`); the shape is not frozen, so types are not generated from the unmerged
+draft, and fixture-only is the data source until then. Once ratified, types come
+from the ratified ADR-0022 contract; the mock and the UI reflect exactly that
+shape and invent no fields, and no UI element implies a capability the canon does
+not have (no fake multi-operator RBAC). **Guard:** the hard-ordering gate + type
+generation from the ratified contract + a shape test.
 
 ## 5. Never new control-plane state
 
@@ -869,6 +879,7 @@ git commit -m "docs: constitution — five 'never's, live from PR-1"
 ## Task 10: Append the working rules to CLAUDE.md
 
 **Files:**
+
 - Modify: `/Users/nick/ocu-admin/CLAUDE.md`
 
 - [ ] **Step 1: Append a "Quality gates" section to CLAUDE.md**
@@ -876,7 +887,6 @@ git commit -m "docs: constitution — five 'never's, live from PR-1"
 Append (do not rewrite the existing file):
 
 ```markdown
-
 ## Quality gates (live from PR-1)
 
 Local pre-commit run (all must pass):
@@ -920,10 +930,12 @@ git commit -m "docs: working-rules — quality gates, forbidden list, tool→lan
 - [ ] **Step 1: Run the full local gate suite green**
 
 Run:
+
 ```bash
 cd web && npm run typecheck && npm run lint && npm run format:check \
   && npm run depcruise && npm run knip && npm run sober && npm run test:cov
 ```
+
 Expected: every command exits 0. Fix anything red before proceeding.
 
 - [ ] **Step 2: Push the branch**
