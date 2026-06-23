@@ -6,6 +6,7 @@ import {
   SESSION_COOKIE,
   sessionCookieOptions,
   clearedCookieOptions,
+  serializeCookie,
 } from "../cookie"
 
 describe("session cookie attributes", () => {
@@ -34,5 +35,22 @@ describe("session cookie attributes", () => {
     expect(opts.sameSite).toBe("strict")
     expect(opts.secure).toBe(true)
     expect(opts.path).toBe("/")
+  })
+
+  it("serializes a Set-Cookie value with all security attributes", () => {
+    const header = serializeCookie("the-token-value")
+    expect(header).toContain(`${SESSION_COOKIE}=the-token-value`)
+    expect(header).toContain("Path=/")
+    expect(header).toContain("Max-Age=28800")
+    expect(header).toContain("SameSite=Strict")
+    expect(header).toContain("HttpOnly")
+    expect(header).toContain("Secure")
+  })
+
+  it("serializes a cleared cookie with Max-Age=0 for logout", () => {
+    const header = serializeCookie("", clearedCookieOptions())
+    expect(header).toContain("Max-Age=0")
+    expect(header).toContain("HttpOnly")
+    expect(header).toContain("SameSite=Strict")
   })
 })

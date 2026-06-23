@@ -50,6 +50,11 @@ describe("POST /api/auth/login", () => {
     expect(res.status).toBe(401)
   })
 
+  it("returns 400 on valid JSON missing the credential fields", async () => {
+    const res = await POST(loginRequest({ nope: true }))
+    expect(res.status).toBe(400)
+  })
+
   it("returns 400 on a malformed body", async () => {
     const res = await POST(
       new Request("https://console.example/api/auth/login", {

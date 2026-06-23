@@ -32,6 +32,15 @@ describe("operator credential verify", () => {
     ).resolves.toBe(false)
   })
 
+  it("rejects a username of a different length (constant-time path)", async () => {
+    const hash = await bcrypt.hash(PASSWORD, BCRYPT_COST)
+    // A shorter input exercises the unequal-length branch of the timing-safe
+    // compare; it must still reject without short-circuiting.
+    await expect(verifyCredential("op", PASSWORD, USER, hash)).resolves.toBe(
+      false,
+    )
+  })
+
   it("uses a bcrypt cost factor of at least 12 (OWASP ASVS V2.4)", () => {
     expect(BCRYPT_COST).toBeGreaterThanOrEqual(12)
   })

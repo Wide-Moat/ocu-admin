@@ -13,7 +13,8 @@
     "knip": "knip --no-progress",
     "depcruise": "depcruise --config .dependency-cruiser.cjs src",
     "test": "vitest run",
-    "test:cov": "vitest run --coverage"
+    "test:cov": "vitest run --coverage",
+    "mutation": "stryker run"
   },
   "dependencies": {
     "bcryptjs": "3.0.3",

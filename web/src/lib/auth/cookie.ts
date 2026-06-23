@@ -46,14 +46,15 @@ export function serializeCookie(
   value: string,
   opts: CookieOptions = sessionCookieOptions(),
 ): string {
+  // httpOnly and secure are always set (their types are the literal `true`);
+  // emit them unconditionally rather than branching on a constant.
+  const sameSite = `${opts.sameSite.charAt(0).toUpperCase()}${opts.sameSite.slice(1)}`
   return [
     `${SESSION_COOKIE}=${value}`,
     `Path=${opts.path}`,
     `Max-Age=${opts.maxAge}`,
-    `SameSite=${opts.sameSite.charAt(0).toUpperCase()}${opts.sameSite.slice(1)}`,
-    opts.httpOnly ? "HttpOnly" : "",
-    opts.secure ? "Secure" : "",
-  ]
-    .filter(Boolean)
-    .join("; ")
+    `SameSite=${sameSite}`,
+    "HttpOnly",
+    "Secure",
+  ].join("; ")
 }

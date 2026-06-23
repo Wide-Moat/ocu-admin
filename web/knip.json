@@ -6,9 +6,8 @@
   ],
   "project": ["src/**/*.{ts,tsx}"],
   "ignoreDependencies": [
-    "@stryker-mutator/core",
-    "@stryker-mutator/vitest-runner",
     "eslint-config-next",
-    "tailwindcss"
+    "tailwindcss",
+    "@stryker-mutator/api"
   ]
 }
