@@ -6,7 +6,8 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: "OCU Operator Console",
-  description: "Read-only operator console for an Open Computer Use deployment.",
+  description:
+    "Read-only operator console for an Open Computer Use deployment.",
 }
 
 export default function RootLayout({
