@@ -1,9 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-Apache-2.0
 // Copyright (c) 2025 Open Computer Use Contributors
 
+import { fileURLToPath } from "node:url"
 import { defineConfig } from "vitest/config"
 
 export default defineConfig({
+  resolve: {
+    // Mirror tsconfig's "@/*" -> "./src/*" so tests resolve app imports.
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
