@@ -4,7 +4,9 @@
 import { describe, it, expect } from "vitest"
 import { signSession, verifySession } from "../session"
 
-const SECRET = "test-secret-at-least-32-bytes-long-xxxxx"
+// Dummy HMAC key for tests only — not a credential. Named explicitly so a
+// secret scanner does not flag it; an exclude-path is the second layer.
+const SECRET = "DUMMY-NOT-A-REAL-SECRET-test-only-padding-0123456789"
 
 function b64url(obj: unknown): string {
   return Buffer.from(JSON.stringify(obj)).toString("base64url")
@@ -61,7 +63,7 @@ describe("session sign/verify round-trip", () => {
   it("rejects a token signed with a different secret", async () => {
     const token = await signSession("operator", SECRET)
     await expect(
-      verifySession(token, "a-totally-different-secret-32-bytes-xx"),
+      verifySession(token, "DUMMY-DIFFERENT-test-only-key-0123456789abcd"),
     ).rejects.toThrow()
   })
 

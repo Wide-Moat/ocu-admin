@@ -1,0 +1,7 @@
+# trufflehog --exclude-paths — regex paths whose matches are NOT secrets.
+# Scanning runs with --no-verification (catches unverified leaks everywhere);
+# this file is the only narrowing, kept minimal.
+#
+# The auth session tests use a dummy HMAC key (named DUMMY-NOT-A-REAL-SECRET);
+# it is not a credential, but its 32+ byte string trips entropy detectors.
+web/src/lib/auth/__tests__/session\.test\.ts
