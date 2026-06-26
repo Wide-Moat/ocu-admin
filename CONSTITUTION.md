@@ -12,8 +12,11 @@ gate never seen red is not installed.
 
 The read/data module and the BFF cannot import or call a mutating authority
 (destroy / revoke / denylist / quota). **Guard:** `dependency-cruiser`
-(`read-must-not-import-authority`) + ESLint `no-restricted-imports` on
-`src/lib/read/**`.
+(`read-must-not-import-authority`, `from: ^src/(app/api|lib/read)` →
+`to: ^src/lib/authority`) + ESLint `no-restricted-imports` scoped to
+`src/lib/read/**` and `src/app/api/**`. The rule covers the real BFF surface
+(`src/app/api`), not only the read module — proven non-vacuous by a probe under
+the guarded path that reds `depcruise`.
 
 ## 2. Never an OCU secret in the browser
 
@@ -25,7 +28,9 @@ plane. **Guard:** the bundle-secrecy test (no UDS marker in the client tree).
 
 A bcrypt-verified operator credential + a `SameSite=Strict` HttpOnly cookie. No
 session without a valid cookie → 401, no fallback. **Guard:** the auth
-middleware test (lands in the auth phase).
+middleware/gate tests (`src/middleware.ts` + `src/lib/auth/gate.ts`, in coverage
+and Stryker-100%); bcrypt cost-12 and HS256 alg-pinning are pinned by the
+credential and session tests.
 
 ## 4. Never invented data, never ahead of canon
 

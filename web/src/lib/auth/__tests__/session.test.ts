@@ -96,8 +96,6 @@ describe("session sign/verify round-trip", () => {
   // this reds and surfaces the regression. The actual undefined->unauthorized
   // behaviour is mutation-tested at the gate level (gate.test isAuthorized).
   it("rejects an undefined token (jose contract pin)", async () => {
-    await expect(
-      verifySession(undefined, SECRET),
-    ).rejects.toThrow()
+    await expect(verifySession(undefined, SECRET)).rejects.toThrow()
   })
 })
