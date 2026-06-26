@@ -18,6 +18,7 @@ web/next-env.d.ts
 coverage/
 test-results/
 playwright-report/
+web/.stryker-tmp/
 
 # ─── env ───
 .env
