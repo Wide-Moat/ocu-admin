@@ -9,17 +9,29 @@ import bcrypt from "bcryptjs"
 export const BCRYPT_COST = 12
 
 // Constant-time string compare so a username match/mismatch does not leak via
-// timing. Compares the full length regardless of where the first difference is.
+// timing. A length mismatch returns early — a session-token / username length is
+// not secret, so this is acceptable and not a timing oracle. For equal-length
+// inputs the loop runs a fixed bound over ALL bytes, accumulating the XOR diff
+// without ever branching or returning mid-loop, so WHERE the first byte differs
+// never leaks. A single final 0-check decides equality.
 function timingSafeEqual(a: string, b: string): boolean {
   const enc = new TextEncoder()
   const ab = enc.encode(a)
   const bb = enc.encode(b)
-  // XOR the lengths in so unequal-length inputs still differ, without an early
-  // length-based return.
-  let diff = ab.length ^ bb.length
-  const max = Math.max(ab.length, bb.length)
-  for (let i = 0; i < max; i++) {
-    diff |= (ab[i] ?? 0) ^ (bb[i] ?? 0)
+  if (ab.length !== bb.length) {
+    return false
+  }
+  // Equal length ⇒ every index is in-bounds; no masking is needed. The bound is
+  // exactly the compared length and the body touches every byte unconditionally.
+  let diff = 0
+  // Stryker disable next-line EqualityOperator: equivalent mutant. `i < n` -> `i
+  // <= n` over two EQUAL-length buffers reads index n on both sides, and a JS
+  // typed-array out-of-bounds read yields `undefined` on both, so the extra
+  // iteration contributes `undefined ^ undefined === 0`. Killing it would need a
+  // data-dependent branch (or unequal-length padding) that breaks the
+  // constant-time guarantee — the higher invariant this function exists to hold.
+  for (let i = 0; i < ab.length; i++) {
+    diff |= ab[i] ^ bb[i]
   }
   return diff === 0
 }

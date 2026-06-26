@@ -41,6 +41,36 @@ describe("operator credential verify", () => {
     )
   })
 
+  // The two cases below pin the rewritten timingSafeEqual against the mutants
+  // that survived the old `?? 0` form. A differing-LENGTH input and a
+  // same-LENGTH differing-BYTE input must BOTH reject. If the loop bound were
+  // mutated (e.g. `<` -> `<=`) or the length pre-check dropped, one of these
+  // would flip and fail — so each is a kill-test.
+  it("rejects a differing-length username (kills the length-bound mutant)", async () => {
+    const hash = await bcrypt.hash(PASSWORD, BCRYPT_COST)
+    // "operator" is 8 bytes; "operators" is 9 — same prefix, one byte longer.
+    await expect(
+      verifyCredential("operators", PASSWORD, USER, hash),
+    ).resolves.toBe(false)
+    // And one byte shorter, "operato", to exercise the other length direction.
+    await expect(
+      verifyCredential("operato", PASSWORD, USER, hash),
+    ).resolves.toBe(false)
+  })
+
+  it("rejects a same-length username differing by one byte (kills the byte-compare mutant)", async () => {
+    const hash = await bcrypt.hash(PASSWORD, BCRYPT_COST)
+    // "operator" -> "operatoR": identical length, a single differing byte in
+    // the final position. Must reject; the loop must touch the last byte.
+    await expect(
+      verifyCredential("operatoR", PASSWORD, USER, hash),
+    ).resolves.toBe(false)
+    // A differing byte in the FIRST position too, same length.
+    await expect(
+      verifyCredential("Xperator", PASSWORD, USER, hash),
+    ).resolves.toBe(false)
+  })
+
   it("uses a bcrypt cost factor of at least 12 (OWASP ASVS V2.4)", () => {
     expect(BCRYPT_COST).toBeGreaterThanOrEqual(12)
   })

@@ -19,7 +19,10 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/lib/read/**/*.{ts,tsx}"],
+    // The read/data module and the BFF surface are both read-only-leaf code:
+    // neither may import a mutating authority. (dependency-cruiser pins the same
+    // boundary; this ESLint rule is the editor-time twin.)
+    files: ["src/lib/read/**/*.{ts,tsx}", "src/app/api/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -28,7 +31,7 @@ export default tseslint.config(
             {
               group: ["**/authority/**", "@/lib/authority/*"],
               message:
-                "Read-only leaf: the read module cannot import a mutating authority.",
+                "Read-only leaf: the read module and the BFF cannot import a mutating authority.",
             },
           ],
         },

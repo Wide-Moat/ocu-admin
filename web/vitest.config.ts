@@ -21,7 +21,7 @@ export default defineConfig({
       // is now active (CONSTITUTION "Activation rule"). Scope coverage to the
       // testable auth/BFF logic; the Next.js shell (layout/page) and pure
       // config files are not unit-tested here.
-      include: ["src/lib/auth/**", "src/app/api/**"],
+      include: ["src/lib/auth/**", "src/app/api/**", "src/middleware.ts"],
       thresholds: {
         statements: 80,
         functions: 80,

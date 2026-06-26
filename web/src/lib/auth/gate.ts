@@ -11,9 +11,10 @@ export async function isAuthorized(
   token: string | undefined,
   secret: string,
 ): Promise<boolean> {
-  if (!token) {
-    return false
-  }
+  // No explicit missing-token guard: verifySession throws on an undefined or
+  // empty token, and the catch returns false — so the absent case is already
+  // unauthorized through the same path as a bad/forged token. An early return
+  // here would be dead code (a surviving mutant), so it is intentionally gone.
   try {
     await verifySession(token, secret)
     return true

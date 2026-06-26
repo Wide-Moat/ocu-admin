@@ -33,11 +33,22 @@ export async function signSession(
     .sign(key(secret))
 }
 
+// `token` is intentionally `string | undefined`: after the gate stopped
+// pre-guarding the missing-token case, an absent cookie reaches here directly.
+// jwtVerify throws `JWSInvalid` on an undefined token (verified firsthand), so
+// the cast satisfies `tsc` WITHOUT adding an inner undefined-guard that would be
+// VACUOUS: any such guard is equivalent to jose's own rejection — removing it
+// would change no observable behaviour and would survive mutation (the exact
+// dead-guard removed from the gate). The undefined-rejection is real and
+// enforced, just at the jose layer, not via a separate killable inner guard. It
+// is tested where it CAN be killed (the gate-level `isAuthorized(undefined)` ->
+// false test) and pinned as a jose contract by a `verifySession(undefined)
+// rejects` test, so a future jose that stops throwing on undefined surfaces.
 export async function verifySession(
-  token: string,
+  token: string | undefined,
   secret: string,
 ): Promise<JWTPayload> {
-  const { payload } = await jwtVerify(token, key(secret), {
+  const { payload } = await jwtVerify(token as string, key(secret), {
     algorithms: [ALG],
   })
   return payload

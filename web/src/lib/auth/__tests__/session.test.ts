@@ -87,4 +87,17 @@ describe("session sign/verify round-trip", () => {
       .sign(new TextEncoder().encode(SECRET))
     await expect(verifySession(expired, SECRET)).rejects.toThrow()
   })
+
+  // CONTRACT-PIN test (not a Stryker-killable-guard test — do NOT remove it as
+  // "redundant"): verifySession takes `string | undefined` because the gate no
+  // longer pre-guards a missing token. We do NOT add an inner undefined-guard —
+  // it would be vacuous, since jose already throws on undefined. This test pins
+  // that jose contract: if a future jose stops throwing on an undefined token,
+  // this reds and surfaces the regression. The actual undefined->unauthorized
+  // behaviour is mutation-tested at the gate level (gate.test isAuthorized).
+  it("rejects an undefined token (jose contract pin)", async () => {
+    await expect(
+      verifySession(undefined, SECRET),
+    ).rejects.toThrow()
+  })
 })
