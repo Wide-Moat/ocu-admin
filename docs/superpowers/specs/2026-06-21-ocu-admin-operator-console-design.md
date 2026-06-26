@@ -76,9 +76,9 @@ type SessionView = {
   container_name?: string; // bound after activation; absent until then
   caps?: {
     // activation enrichment; absent until active
-    cpu_cores: number;
+    cpu_cores: number; // fractional cores; hard ceiling, exclusiveMinimum 0
     memory_bytes: number; // integer (bytes); hard ceiling, exclusiveMinimum 0
-    pids_limit?: number;
+    pids_limit?: number; // integer (process-count cap); exclusiveMinimum 0
   };
   reserved_at: string; // ISO; ALWAYS present
   active_at?: string; // ISO; absent until the row reaches active
@@ -121,12 +121,23 @@ same surface that attributes a session to its `tenant`/`caller`. The console
 renders what the read surface emits; it does not reconstruct owner from a
 lifecycle field that has none.
 
-> **Open question (for ADR-0022 to pin):** ADR-0022 must name owner's
-> provenance on the read surface — that `tenant`/`caller` come from the
-> audit/host-side ownership projection, not the lifecycle handle — so phase-4
-> type-gen does not invent an owner field the frozen write-shape never emits.
-> Until ADR-0022 pins this, the fixture supplies owner and the BFF treats it as
-> read-surface-sourced, inventing no lifecycle-handle field.
+The same holds for `reserved_at`, `active_at`, and `container_name`. The frozen
+operator-REST `SessionHandle` carries only `session_key` + `state`
+(`additionalProperties: false`): it emits no timestamp and no container name. So
+these three fields are read-surface/audit-derived enrichment, host-side in the
+same audit projection as owner (NFR-SEC-43) — the reserved→active timing comes
+from the audit lifecycle events, the container name from the activation record.
+The console renders what the read surface emits; it does not read them from a
+lifecycle handle that has none.
+
+> **Open question (for ADR-0022 to pin):** ADR-0022 must name the provenance on
+> the read surface of owner **and** of `reserved_at` / `active_at` /
+> `container_name` — that `tenant`/`caller`, the lifecycle timestamps, and the
+> container name come from the audit/host-side projection, not the lifecycle
+> handle — so phase-4 type-gen does not treat them as handle-sourced or invent
+> fields the frozen write-shape never emits. Until ADR-0022 pins this, the
+> fixture supplies them and the BFF treats them as read-surface-sourced,
+> inventing no lifecycle-handle field.
 
 **Tier source, with a forward seam:** `runtime_tier` is a deployment-wide
 singleton today (shown as a header badge). NFR-SEC-38 allows mixed-tier per
