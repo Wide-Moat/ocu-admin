@@ -70,14 +70,14 @@ browser speaks the same shapes to the BFF over HTTPS.
 
 ```ts
 type SessionView = {
-  key: string;
-  owner: { tenant: string; caller: string };
+  session_key: string; // canon name (the host-derived reservation key)
+  owner: { tenant: string; caller: string }; // from the AUDIT/host-side projection, NOT the lifecycle handle (see below)
   state: "reserved" | "active" | "released"; // lowercase, exact
   container_name?: string; // bound after activation; absent until then
   caps?: {
     // activation enrichment; absent until active
     cpu_cores: number;
-    memory_bytes: number;
+    memory_bytes: number; // integer (bytes); hard ceiling, exclusiveMinimum 0
     pids_limit?: number;
   };
   reserved_at: string; // ISO; ALWAYS present
@@ -92,13 +92,13 @@ type DeploymentView = {
 
 Endpoints (all GET, through the BFF):
 
-| Endpoint                      | Returns              | Notes                                                      |
-| ----------------------------- | -------------------- | ---------------------------------------------------------- |
-| `GET /v1alpha/sessions`       | `SessionView[]`      | `?include_released` adds RELEASED tombstones               |
-| `GET /v1alpha/sessions/{key}` | `SessionView` \| 404 | single enriched row                                        |
-| `GET /v1alpha/deployment`     | `DeploymentView`     | deployment-wide singletons                                 |
-| `GET /metrics`                | Prometheus text      | counts-by-state, create/destroy, reserved→active histogram |
-| `GET /v1alpha/events`         | `text/event-stream`  | **future additive, not frozen** — poll first               |
+| Endpoint                              | Returns              | Notes                                                      |
+| ------------------------------------- | -------------------- | ---------------------------------------------------------- |
+| `GET /v1alpha/sessions`               | `SessionView[]`      | `?include_released` adds RELEASED tombstones               |
+| `GET /v1alpha/sessions/{session_key}` | `SessionView` \| 404 | single enriched row                                        |
+| `GET /v1alpha/deployment`             | `DeploymentView`     | deployment-wide singletons                                 |
+| `GET /metrics`                        | Prometheus text      | counts-by-state, create/destroy, reserved→active histogram |
+| `GET /v1alpha/events`                 | `text/event-stream`  | **future additive, not frozen** — poll first               |
 
 **State → UI label mapping:** `reserved` → _Creating_, `active` → _Live_,
 `released` → _Destroyed_.
@@ -110,6 +110,23 @@ Endpoints (all GET, through the BFF):
   registry. The BFF parses the Prometheus exposition and returns the summary.
 - **Age** of a session (for the card) = `now − reserved_at`. This is "how long
   it has existed", not start time.
+
+**Owner provenance — from the audit projection, never the lifecycle handle.**
+The frozen operator-REST `SessionHandle` (canon `contracts/openapi/operator-rest.openapi.yaml`)
+deliberately carries **no** owner: caller identity is host-attested from the
+operator transport's peer credential and is never a body field (NFR-SEC-43). So
+`SessionView.owner` is **not** a projection of the create/lifecycle handle — the
+read surface derives it host-side from the audit/host-side ownership record, the
+same surface that attributes a session to its `tenant`/`caller`. The console
+renders what the read surface emits; it does not reconstruct owner from a
+lifecycle field that has none.
+
+> **Open question (for ADR-0022 to pin):** ADR-0022 must name owner's
+> provenance on the read surface — that `tenant`/`caller` come from the
+> audit/host-side ownership projection, not the lifecycle handle — so phase-4
+> type-gen does not invent an owner field the frozen write-shape never emits.
+> Until ADR-0022 pins this, the fixture supplies owner and the BFF treats it as
+> read-surface-sourced, inventing no lifecycle-handle field.
 
 **Tier source, with a forward seam:** `runtime_tier` is a deployment-wide
 singleton today (shown as a header badge). NFR-SEC-38 allows mixed-tier per
@@ -210,8 +227,8 @@ renumbers plan IDs and strips prose; fleet lesson).
    Once unblocked: types from the ratified ADR-0022 shape, mock BFF with
    polling + lifecycle simulation, 503/`BoundedReason` handling.
 5. **Flip mock → real per-endpoint** — as `pjyjol0z` lands `/sessions`,
-   `/{key}`, `/deployment`, `/metrics`. Depends on upstream; decoupled by the
-   mock.
+   `/{session_key}`, `/deployment`, `/metrics`. Depends on upstream; decoupled
+   by the mock.
 6. **Constitution finalization** — mutation-proof per "never" (flip a guard →
    RED → green on revert), full tool→language map, activation rule for the
    deferred coverage/Stryker gates.
