@@ -86,7 +86,7 @@ describe("Dashboard — header bar (state ok)", () => {
     expect(link).toHaveAttribute("href", GRAFANA)
   })
 
-  it("renders a logout affordance pointing at the existing auth surface", () => {
+  it("renders a logout affordance that POSTs to the clear-cookie route", () => {
     render(
       <Dashboard
         deployment={fixtureDeployment}
@@ -97,11 +97,15 @@ describe("Dashboard — header bar (state ok)", () => {
         state="ok"
       />,
     )
-    // A logout affordance exists and points at the existing /api/auth surface —
-    // it wires no NEW mutating route, just a link to the auth ingress.
+    // Logout is a submit button inside a POST form aimed at the clear-cookie
+    // route — a POST (not a GET link) so no prefetch can end the session.
     const logout = screen.getByTestId("logout")
     expect(logout).toBeInTheDocument()
-    expect(logout).toHaveAttribute("href", expect.stringContaining("/api/auth"))
+    expect(logout).toHaveAttribute("type", "submit")
+    const form = logout.closest("form")
+    expect(form).not.toBeNull()
+    expect(form).toHaveAttribute("action", "/api/auth/logout")
+    expect(form?.getAttribute("method")?.toLowerCase()).toBe("post")
   })
 })
 

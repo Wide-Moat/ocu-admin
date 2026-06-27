@@ -5,9 +5,10 @@
 // layout"). It assembles the leaf primitives into one screen:
 //
 //   - Header bar: console name · DeploymentBadge (runtime_tier · provider) ·
-//     GrafanaLink ("Live metrics → Grafana") · a logout affordance that points
-//     at the EXISTING /api/auth surface (no new mutating route — just a link to
-//     the auth ingress).
+//     GrafanaLink ("Live metrics → Grafana") · a logout affordance that POSTs to
+//     the auth-substrate's clear-cookie route (`/api/auth/logout`), which drops
+//     the session cookie. This is the console's only auth write; it touches no
+//     control-plane state.
 //   - StatsTiles: exactly the two summary stats (Active sessions · Avg start
 //     time), derived from sessions + the /metrics histogram.
 //   - Sessions grid: one SessionCard per row, in a responsive Tailwind grid,
@@ -57,10 +58,9 @@ import type {
  */
 export type DashboardState = "ok" | "loading" | "unavailable"
 
-// Where the logout affordance points: the EXISTING auth ingress. The console
-// adds no new mutating route; this is a link to the auth surface that already
-// owns the session cookie, nothing more.
-const LOGOUT_HREF = "/api/auth/login"
+// Where the logout affordance POSTs: the auth-substrate's clear-cookie route.
+// It drops the session cookie and returns 204; it reads no control-plane state.
+const LOGOUT_ACTION = "/api/auth/logout"
 
 export function Dashboard({
   deployment,
@@ -89,14 +89,17 @@ export function Dashboard({
         </div>
         <div className="flex items-center gap-4">
           <GrafanaLink href={grafanaHref} />
-          {/* Logout points at the EXISTING auth surface — no new route. */}
-          <a
-            data-testid="logout"
-            href={LOGOUT_HREF}
-            className="text-sm text-zinc-400 transition-colors hover:text-zinc-200"
-          >
-            Log out
-          </a>
+          {/* Logout POSTs to the clear-cookie route; a form (not a link) so a
+              prefetch or cross-site GET cannot silently end the session. */}
+          <form method="POST" action={LOGOUT_ACTION}>
+            <button
+              data-testid="logout"
+              type="submit"
+              className="text-sm text-zinc-400 transition-colors hover:text-zinc-200"
+            >
+              Log out
+            </button>
+          </form>
         </div>
       </header>
 
