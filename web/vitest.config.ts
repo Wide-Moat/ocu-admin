@@ -12,8 +12,13 @@ export default defineConfig({
     },
   },
   test: {
+    // Node is the default environment (the auth/BFF tests run under node). A
+    // component test opts into jsdom per-file with a `// @vitest-environment
+    // jsdom` comment, so this default stays node and the node-env tests are
+    // untouched. The include matches both .test.ts and .test.tsx (component
+    // tests are .tsx).
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
