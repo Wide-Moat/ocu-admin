@@ -55,14 +55,17 @@ The UI row type matches the ADR-0022 read-surface field set and its optionality
 exactly: `reserved_at` always present; `active_at` / `caps` / `container_name`
 are activation enrichment (the `EnrichedLister` read seam), absent until the row
 reaches `active`. The console invents no field the contract does not emit, and
-marks no enrichment field non-optional. ADR-0022 is OPEN as canon PR #310
+marks no enrichment field non-optional. ADR-0022 is merged onto `next/v1`
 (`docs/architecture/adr/0022-admin-read-surface.md`, all-GET read-API behind a
-BFF); the read row is `{key, owner{tenant, caller}, state, container_name?,
+BFF), with the `status: accepted` flip tracked as a follow-up bookkeeping PR; the
+read row is `{key, owner{tenant, caller}, state, container_name?,
 caps?{cpu_cores, memory_bytes, pids_limit?}, reserved_at, active_at?}`.
-**Guard (TODO until ADR-0022 accepted):** a schema/contract test that pins the UI
-row type to the #310 field set + optionality, plus type generation from the
-ratified contract (Phase 4). Until then the drafted type is verified by review
-against #310 and may invent no field beyond it.
+**Guard (TODO until ADR-0022 is `status: accepted` on `next/v1`):** a
+schema/contract test that pins the UI row type to the ratified field set +
+optionality, plus type generation from the ratified contract (Phase 4). The unblock
+signal is the `accepted` status, not merely the merge; until then no type is
+generated and any drafted type is verified by review against the contract and may
+invent no field beyond it.
 
 ## 7. Dashboard honesty: a fixture-backed view is a labelled stub
 
@@ -71,9 +74,13 @@ honest stub, never presented as a live source. The fixture→real swap is Phase 
 (ADR-0022-gated); until a real BFF read client is wired, the dashboard reads the
 static fixture and nothing in the UI implies live data. **Guard (TODO — gate to
 add in Phase 4):** a test asserting that a fixture-backed view is flagged as a
-stub (not presented as live) until the real dial lands. Today the honesty is
-enforced structurally — `page.tsx` imports only `@/lib/read/fixture` and there is
-zero control dial in the dashboard path (verified by grep).
+stub (not presented as live) until the real dial lands. The structural backstop
+in every state is the same one §2/§5 already enforce: there is no control dial
+anywhere in this repo (the import boundary and the bundle-secrecy walk both red a
+read path that reaches a mutating authority or a UDS marker), so nothing in the
+dashboard path *can* read a live source ahead of Phase 4. In this scaffold phase
+`page.tsx` is a static placeholder with no data import at all; when the
+fixture-backed dashboard lands it reads only `@/lib/read/fixture`, never a dial.
 
 This console MUST NOT read a non-canon source. The operator read surface and its
 named read identity must be **accepted on `next/v1`** in the architecture repo
