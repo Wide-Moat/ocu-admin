@@ -67,7 +67,7 @@ CLAUDE.md                   # append: gates, forbidden list, tool→language map
 
 **Files:**
 
-- Modify: `/Users/nick/ocu-admin/.gitignore`
+- Modify: `.gitignore`
 
 - [ ] **Step 1: Remove the Go build/runtime block**
 
@@ -810,7 +810,7 @@ git commit -m "ci: scaffold pre-release Stryker workflow (activates in auth phas
 
 **Files:**
 
-- Create: `/Users/nick/ocu-admin/CONSTITUTION.md`
+- Create: `CONSTITUTION.md`
 
 - [ ] **Step 1: Write `CONSTITUTION.md`**
 
@@ -881,7 +881,7 @@ git commit -m "docs: constitution — five 'never's, live from PR-1"
 
 **Files:**
 
-- Modify: `/Users/nick/ocu-admin/CLAUDE.md`
+- Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Append a "Quality gates" section to CLAUDE.md**
 
