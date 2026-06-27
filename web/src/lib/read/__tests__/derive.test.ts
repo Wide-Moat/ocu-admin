@@ -58,7 +58,7 @@ describe("ageSeconds — now − reserved_at, floored (design-spec §3 'Age')", 
   it("measures from reserved_at, not active_at", () => {
     // The fixture's first Live row: reserved 06:45:02, active 06:45:09.
     // Age at 06:46:02 is 60s from RESERVED, not 53s from active.
-    const live = fixtureSessions.find((s) => s.session_key === "sess-2b81d4")!
+    const live = fixtureSessions.find((s) => s.key === "sess-2b81d4")!
     const now = new Date("2026-06-27T06:46:02.000Z")
     expect(ageSeconds(live.reserved_at, now)).toBe(60)
   })
@@ -105,13 +105,13 @@ describe("activeCount — count of state==='active' (Active sessions tile)", () 
   it("ignores reserved and released rows", () => {
     const rows: SessionView[] = [
       {
-        session_key: "a",
+        key: "a",
         owner: { tenant: "t", caller: "c" },
         state: "reserved",
         reserved_at: "2026-06-27T06:00:00.000Z",
       },
       {
-        session_key: "b",
+        key: "b",
         owner: { tenant: "t", caller: "c" },
         state: "released",
         reserved_at: "2026-06-27T06:00:00.000Z",
@@ -122,7 +122,7 @@ describe("activeCount — count of state==='active' (Active sessions tile)", () 
 
   it("counts only active among a mixed hand-built list", () => {
     const mk = (state: SessionView["state"]): SessionView => ({
-      session_key: state,
+      key: state,
       owner: { tenant: "t", caller: "c" },
       state,
       reserved_at: "2026-06-27T06:00:00.000Z",
@@ -159,7 +159,7 @@ describe("avgStartSeconds — sum_seconds / observation_count (Avg start tile)",
   it("never derives from a single row's active_at − reserved_at", () => {
     // A row whose own active−reserved is 7s, but the histogram average is 6.5s.
     // The function must use ONLY the histogram (design-spec §3 forbids per-row).
-    const live = fixtureSessions.find((s) => s.session_key === "sess-2b81d4")!
+    const live = fixtureSessions.find((s) => s.key === "sess-2b81d4")!
     const perRow =
       (Date.parse(live.active_at!) - Date.parse(live.reserved_at)) / 1000
     expect(perRow).toBe(7) // sanity: the row really is 7s

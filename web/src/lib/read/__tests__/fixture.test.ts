@@ -33,10 +33,10 @@ describe("fixture session lifecycle states", () => {
     }
   })
 
-  it("every row always carries session_key, owner, and reserved_at", () => {
+  it("every row always carries key, owner, and reserved_at", () => {
     for (const s of fixtureSessions) {
-      expect(typeof s.session_key).toBe("string")
-      expect(s.session_key.length).toBeGreaterThan(0)
+      expect(typeof s.key).toBe("string")
+      expect(s.key.length).toBeGreaterThan(0)
       expect(typeof s.owner.tenant).toBe("string")
       expect(typeof s.owner.caller).toBe("string")
       expect(typeof s.reserved_at).toBe("string")

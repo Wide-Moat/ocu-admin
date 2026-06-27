@@ -33,13 +33,17 @@ export type SessionCaps = {
 }
 
 /**
- * A single projected session row. `session_key`, `owner`, `state`, and
+ * A single projected session row. `key`, `owner`, `state`, and
  * `reserved_at` are always present; `container_name`, `caps`, and `active_at`
  * are read-surface/audit-derived activation enrichment, absent until the row
  * reaches `active`.
  */
 export type SessionView = {
-  session_key: string // canon name (host-derived reservation key)
+  // The canon read-row names this `key` (the host-derived reservation key). It
+  // is distinct from the #293 write-handle's session-key field: the
+  // read-projection (SessionView) and the lifecycle handle (SessionHandle) are
+  // intentionally different types.
+  key: string
   // Owner attribution from the audit/host-side projection — NOT the lifecycle
   // handle, which carries no owner (caller identity is host-attested from the
   // operator transport's peer credential, never a body field).

@@ -186,7 +186,7 @@ function SessionsRegion({
       className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
     >
       {sessions.map((session) => (
-        <SessionCard key={session.session_key} session={session} now={now} />
+        <SessionCard key={session.key} session={session} now={now} />
       ))}
     </div>
   )

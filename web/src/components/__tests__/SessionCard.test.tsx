@@ -24,7 +24,7 @@ import { fixtureSessions } from "@/lib/read/fixture"
 import type { SessionView } from "@/lib/read/types"
 
 const byKey = (key: string): SessionView =>
-  fixtureSessions.find((s) => s.session_key === key)!
+  fixtureSessions.find((s) => s.key === key)!
 
 // A fixed clock so the age chip is deterministic.
 const NOW = new Date("2026-06-27T06:48:52.000Z")
@@ -57,7 +57,7 @@ describe("SessionCard — reserved (Creating)", () => {
     expect(screen.getByTestId("container-name")).toHaveTextContent("—")
   })
 
-  it("shows the session_key", () => {
+  it("shows the key", () => {
     render(<SessionCard session={reserved} now={NOW} />)
     expect(screen.getByText("sess-7f3a9c")).toBeInTheDocument()
   })

@@ -94,7 +94,7 @@ describe("StatsTiles — avg-start comes from the histogram, not a row", () => {
     // histogram's 6.5s instead.
     const rowWithSlowStart: SessionView[] = [
       {
-        session_key: "sess-slow",
+        key: "sess-slow",
         owner: { tenant: "acme", caller: "api-bot" },
         state: "active",
         container_name: "ocu-sb-slow",

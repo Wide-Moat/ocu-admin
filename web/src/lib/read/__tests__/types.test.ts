@@ -23,7 +23,7 @@ describe("read-surface view types", () => {
   it("a reserved row needs only the always-present fields", () => {
     // No caps / container_name / active_at — the type permits their absence.
     const reserved = {
-      session_key: "sess-0000",
+      key: "sess-0000",
       owner: { tenant: "t", caller: "c" },
       state: "reserved",
       reserved_at: "2026-06-27T00:00:00.000Z",

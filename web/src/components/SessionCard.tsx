@@ -4,7 +4,7 @@
 // SessionCard — the dashboard primitive (design-spec §4, "Session card").
 //
 // It renders ONE projected SessionView: a lifecycle state badge, the
-// `session_key` in mono, an age chip, the owner, the resource caps, and the
+// `key` in mono, an age chip, the owner, the resource caps, and the
 // container name. It is a presentational read-only-leaf component — it fetches
 // nothing and polls nothing (that's a later phase); the row and the clock
 // (`now: Date`) are props, so the age renders identically in a test and at
@@ -108,9 +108,9 @@ export function SessionCard({
         <span
           data-testid="session-key"
           className="font-mono text-zinc-300"
-          title={session.session_key}
+          title={session.key}
         >
-          {session.session_key}
+          {session.key}
         </span>
 
         <span

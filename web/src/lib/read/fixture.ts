@@ -36,14 +36,14 @@ export const fixtureSessions: SessionView[] = [
   {
     // Creating: reserved but not yet activated — no caps, no container, no
     // active_at. The absent-until-active invariant in row form.
-    session_key: "sess-7f3a9c",
+    key: "sess-7f3a9c",
     owner: { tenant: "acme", caller: "api-bot" },
     state: "reserved",
     reserved_at: "2026-06-27T06:48:10.000Z",
   },
   {
     // Live: fully enriched. 4 GiB = 4 * 1024^3 bytes, an exact integer.
-    session_key: "sess-2b81d4",
+    key: "sess-2b81d4",
     owner: { tenant: "acme", caller: "api-bot" },
     state: "active",
     container_name: "ocu-sb-2b81d4",
@@ -58,7 +58,7 @@ export const fixtureSessions: SessionView[] = [
   {
     // A second Live row with a different tenant and a fractional core, so the
     // grid renders more than one enriched card and a non-integer cpu_cores.
-    session_key: "sess-9d40e1",
+    key: "sess-9d40e1",
     owner: { tenant: "globex", caller: "scheduler" },
     state: "active",
     container_name: "ocu-sb-9d40e1",
@@ -73,7 +73,7 @@ export const fixtureSessions: SessionView[] = [
   {
     // Destroyed: a tombstone. Carried active_at while it lived; the read surface
     // keeps the historical timestamps on the released row.
-    session_key: "sess-1a05b7",
+    key: "sess-1a05b7",
     owner: { tenant: "initech", caller: "api-bot" },
     state: "released",
     container_name: "ocu-sb-1a05b7",
