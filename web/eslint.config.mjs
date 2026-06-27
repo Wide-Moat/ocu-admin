@@ -29,7 +29,17 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ["**/authority/**", "@/lib/authority/*"],
+              // Cover the authority module imported at its root AND at any
+              // depth, via both relative and alias paths. A single-segment
+              // `@/lib/authority/*` would miss the bare `@/lib/authority` /
+              // `../authority` root import — the exact bypass that would leave
+              // the boundary the constitution advertises only half-guarded.
+              group: [
+                "**/authority",
+                "**/authority/**",
+                "@/lib/authority",
+                "@/lib/authority/**",
+              ],
               message:
                 "Read-only leaf: the read module and the BFF cannot import a mutating authority.",
             },

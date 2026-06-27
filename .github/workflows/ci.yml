@@ -233,6 +233,12 @@ jobs:
   sca-trivy-fs:
     name: SCA — trivy (filesystem)
     runs-on: ubuntu-latest
+    # The global token is contents:read only; uploading SARIF to code-scanning
+    # needs security-events:write, or the upload silently no-ops and the audit
+    # surface goes dark. Scope it to this job, not the whole workflow.
+    permissions:
+      contents: read
+      security-events: write
     defaults:
       run:
         working-directory: .
