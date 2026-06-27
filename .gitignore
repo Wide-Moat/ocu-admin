@@ -19,6 +19,7 @@ coverage/
 test-results/
 playwright-report/
 web/.stryker-tmp/
+web/reports/
 
 # ─── env ───
 .env
