@@ -30,4 +30,26 @@ describe("auth config", () => {
       loadAuthConfig({ ...ENV, OCU_ADMIN_SESSION_SECRET: "too-short" }),
     ).toThrow()
   })
+
+  it("measures the floor in BYTES, not UTF-16 code units", () => {
+    // The constant and message say "bytes", but `String.length` counts UTF-16
+    // code units. A multi-byte secret therefore has more bytes of entropy than
+    // its `.length` suggests: 20 × "é" is 20 code units but 40 UTF-8 bytes —
+    // comfortably over the 32-byte floor. The byte measure must ACCEPT it.
+    const multiByte = "é".repeat(20)
+    expect(multiByte.length).toBe(20) // under the floor by code units
+    expect(Buffer.byteLength(multiByte, "utf8")).toBe(40) // over the floor by bytes
+    expect(() =>
+      loadAuthConfig({ ...ENV, OCU_ADMIN_SESSION_SECRET: multiByte }),
+    ).not.toThrow()
+  })
+
+  it("rejects a secret under the floor even when it is multi-byte", () => {
+    // 10 × "é" is 10 code units and 20 UTF-8 bytes — still under 32 bytes.
+    const shortMultiByte = "é".repeat(10)
+    expect(Buffer.byteLength(shortMultiByte, "utf8")).toBe(20)
+    expect(() =>
+      loadAuthConfig({ ...ENV, OCU_ADMIN_SESSION_SECRET: shortMultiByte }),
+    ).toThrow()
+  })
 })
