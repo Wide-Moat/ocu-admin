@@ -7,22 +7,18 @@
 .idea/
 .vscode/
 
-# ─── Go build/runtime ───
-/ocu-admin
-*.bin
-cover.out
-*.coverprofile
-
-# ─── node / vite build (web/) ───
+# ─── node / Next.js build (web/) ───
 node_modules/
-web/dist/
-web/.vite/
+web/.next/
+web/out/
+web/next-env.d.ts
 *.tsbuildinfo
 
 # ─── coverage / test artifacts ───
 coverage/
 test-results/
 playwright-report/
+web/.stryker-tmp/
 
 # ─── env ───
 .env

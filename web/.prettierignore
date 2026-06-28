@@ -1,0 +1,7 @@
+# Build output and generated artefacts — never hand-formatted.
+.next/
+coverage/
+node_modules/
+package-lock.json
+next-env.d.ts
+tsconfig.tsbuildinfo
