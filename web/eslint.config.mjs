@@ -19,10 +19,15 @@ export default tseslint.config(
     },
   },
   {
-    // The read/data module and the BFF surface are both read-only-leaf code:
-    // neither may import a mutating authority. (dependency-cruiser pins the same
-    // boundary; this ESLint rule is the editor-time twin.)
-    files: ["src/lib/read/**/*.{ts,tsx}", "src/app/api/**/*.{ts,tsx}"],
+    // The read/data module, the BFF surface, and the presentational components
+    // are all read-only-leaf code: none may import a mutating authority.
+    // (dependency-cruiser pins the same boundary; this ESLint rule is the
+    // editor-time twin.)
+    files: [
+      "src/lib/read/**/*.{ts,tsx}",
+      "src/app/api/**/*.{ts,tsx}",
+      "src/components/**/*.{ts,tsx}",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",
