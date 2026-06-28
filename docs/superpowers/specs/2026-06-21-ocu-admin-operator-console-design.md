@@ -4,12 +4,10 @@
 # ocu-admin — read-only operator console — design
 
 **Status:** design, pending owner review
-**Upstream read-surface contract:** ADR-0022 (admin read-surface) — drafted, NOT
-yet ratified (`status: proposed` on the unmerged branch
-`feat/admin-read-surface-contract` @ `a8064807` in `Wide-Moat/open-computer-use`;
-that sha is not `next/v1` canon). The shape is **not frozen**. Read-surface code
-is gated on ADR-0022 `status: accepted` on `next/v1`; named-read-identity code is
-additionally gated on ADR-0004 accepted on `next/v1`.
+**Upstream read-surface contract:** ADR-0022 (admin read-surface) — accepted
+(`status: accepted` on `next/v1` in `Wide-Moat/open-computer-use`). The shape is
+**frozen**. Read-surface code is unblocked; named-read-identity code is still
+gated on ADR-0004 accepted on `next/v1`.
 **Date:** 2026-06-21
 
 ## 1. What this is
@@ -44,11 +42,10 @@ design; they are not negotiable in this repo.
    hash from config/env (NFR-SEC-84). A first-party `SameSite=Strict` HttpOnly
    cookie. No OIDC, no `next-auth`, no user management. No session without a
    valid cookie → 401, no fallback.
-5. **No invented data, never ahead of canon.** Type generation is BLOCKED until
-   ADR-0022 ratifies (`status: accepted` on `next/v1`); the shape is not frozen,
-   so types are not generated from the unmerged draft. Until then the only data
-   source is a checked-in fixture. Once ratified, types come from the ratified
-   ADR-0022 shape and the mock reflects exactly that shape, inventing no fields.
+5. **No invented data, never ahead of canon.** ADR-0022 is `status: accepted` on
+   `next/v1`, so the shape is frozen: types come from the ratified ADR-0022 shape
+   and the mock reflects exactly that shape, inventing no fields. A checked-in
+   fixture seeds the mock; it adds no field the contract does not have.
 
 Accepted limitations (recorded in ADR-0022, surfaced honestly in the UI, not
 hidden and not papered over with fake personalization):
@@ -59,11 +56,10 @@ hidden and not papered over with fake personalization):
 - **Operator-sees-all** — the console projects every session in the deployment;
   no per-operator scoping of the read.
 
-## 3. The drafted data contract (ADR-0022 — not yet ratified)
+## 3. The data contract (ADR-0022 — accepted)
 
-This is the **drafted** shape from ADR-0022 (`status: proposed`, unmerged). It is
-NOT frozen and may change before ratification; it is recorded here to design
-against, not to generate types from until ADR-0022 is accepted on `next/v1`.
+This is the shape from ADR-0022 (`status: accepted` on `next/v1`). It is frozen;
+types are generated from it and the mock BFF read client is built against it.
 
 The BFF speaks these endpoints to `ocu-control` over the operator UDS. The
 browser speaks the same shapes to the BFF over HTTPS.
@@ -233,10 +229,10 @@ renumbers plan IDs and strips prose; fleet lesson).
    turn on Stryker ≥60% on the auth path (this is where that code first exists).
 3. **Dashboard UI (pro-max)** — live cards, lifecycle transitions, two stats
    tiles, deployment badge, dark theme, Grafana link, 503/empty/loading states.
-4. **Mock-contract BFF client** — GATED on ADR-0022 `status: accepted` on
-   `next/v1`; type generation is BLOCKED until then (the shape is not frozen).
-   Once unblocked: types from the ratified ADR-0022 shape, mock BFF with
-   polling + lifecycle simulation, 503/`BoundedReason` handling.
+4. **Mock-contract BFF client** — UNBLOCKED and built (ADR-0022 is
+   `status: accepted` on `next/v1`, so the shape is frozen). Types from the
+   ratified ADR-0022 shape, mock BFF with polling + lifecycle simulation,
+   503/`BoundedReason` handling.
 5. **Flip mock → real per-endpoint** — as `pjyjol0z` lands `/sessions`,
    `/{session_key}`, `/deployment`, `/metrics`. Depends on upstream; decoupled
    by the mock.
@@ -260,10 +256,11 @@ Each is enforced by a PR-1 gate; each gets a mutation-proof in phase 6.
    asserts the client bundle is free of the UDS path / cred markers.
 3. **Never anonymous** — bcrypt cookie `SameSite=Strict` HttpOnly; no session
    without a valid cookie → 401, no fallback. Guard: auth middleware test.
-4. **Never invented data, never ahead of canon** — type generation is BLOCKED
-   until ADR-0022 ratifies (`status: accepted` on `next/v1`); the shape is not
-   frozen, so no types from the unmerged draft. Fixture-only until then. Guard:
-   the hard-ordering gate + type-gen from the ratified contract + a shape test.
+4. **Never invented data, never ahead of canon** — ADR-0022 is `status:
+   accepted` on `next/v1`, so the shape is frozen and the read types come from
+   the ratified contract; the console invents no field beyond it and the mock
+   BFF reflects exactly that shape (the operator-sees-all read row, no per-tenant
+   scoping). Guard: the hard-ordering gate + the type-pinning shape test.
 5. **Never new control-plane state** — the console projects what the control
    plane reports; it owns no mutable state. Guard: the all-GET surface + the
    import boundary.
