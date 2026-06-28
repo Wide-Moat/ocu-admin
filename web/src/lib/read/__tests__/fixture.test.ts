@@ -71,10 +71,15 @@ describe("active row — activation enrichment present", () => {
       // memory_bytes is an integer count of bytes.
       expect(Number.isInteger(caps.memory_bytes)).toBe(true)
       expect(caps.memory_bytes).toBeGreaterThan(0)
-      // pids_limit, when present, is an integer process-count cap.
-      expect(caps.pids_limit).toBeDefined()
-      expect(Number.isInteger(caps.pids_limit!)).toBe(true)
-      expect(caps.pids_limit!).toBeGreaterThan(0)
+      // pids_limit is OPTIONAL on the contract (SessionCaps["pids_limit"]?):
+      // an active row may omit it, and SessionCard renders a safe fallback when
+      // absent. Assert the integer/positive shape only when it is present, so a
+      // valid PID-cap-less active row does not fail this test (test tracks the
+      // type, not stricter than it).
+      if (caps.pids_limit !== undefined) {
+        expect(Number.isInteger(caps.pids_limit)).toBe(true)
+        expect(caps.pids_limit).toBeGreaterThan(0)
+      }
 
       expect(typeof s.container_name).toBe("string")
       expect(s.container_name!.length).toBeGreaterThan(0)
