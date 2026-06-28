@@ -3,12 +3,12 @@
 
 // Read-surface view types for the ocu-admin operator console.
 //
-// These mirror the drafted ADR-0022 read contract (design spec §3) field for
-// field. The shape is NOT frozen — ADR-0022 is `status: proposed`, unmerged —
-// so these types exist only to design the fixture-fed dashboard against; they
-// are not generated from the draft and invent no field beyond it (spec §4,
-// "never invented data"). When ADR-0022 ratifies on `next/v1`, the generated
-// types replace this file and the fixture is checked against them.
+// These mirror the ratified ADR-0022 read contract (design spec §3) field for
+// field. ADR-0022 is now `status: accepted` on `next/v1`, so this read row is
+// the FROZEN source: the shape below is the contract, not a draft, and the
+// CONSTITUTION §6 shape-contract test pins it (`__tests__/contract.test.ts`).
+// These types invent no field beyond the contract (spec §4, "never invented
+// data"), and the fixture is checked against them.
 //
 // The read module is a read-only leaf: nothing here imports a control-plane
 // authority (denylist / quota / lifecycle). The import-boundary rule pins it.
