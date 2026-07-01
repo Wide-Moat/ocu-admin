@@ -45,7 +45,10 @@ export function stateLabel(
  */
 export function ageSeconds(reserved_at: string, now: Date): number {
   const elapsedMs = now.getTime() - Date.parse(reserved_at)
-  return Math.floor(elapsedMs / 1000)
+  // Clamp at 0: clock skew between the BFF and the control plane can leave
+  // reserved_at slightly ahead of `now`, and a card must never show a negative
+  // age (e.g. "-3s").
+  return Math.max(0, Math.floor(elapsedMs / 1000))
 }
 
 /**

@@ -24,7 +24,11 @@ export function loadAuthConfig(env: Env = process.env): AuthConfig {
   const operatorBcryptHash = required(env, "OCU_ADMIN_OPERATOR_BCRYPT_HASH")
   const sessionSecret = required(env, "OCU_ADMIN_SESSION_SECRET")
 
-  if (sessionSecret.length < MIN_SECRET_BYTES) {
+  // Measure the floor in BYTES, not `String.length` (UTF-16 code units): the
+  // constant and the message speak of bytes, and a multi-byte secret carries
+  // more bytes of entropy than its code-unit count. Buffer is part of the
+  // Node server runtime, and this file is server-only config.
+  if (Buffer.byteLength(sessionSecret, "utf8") < MIN_SECRET_BYTES) {
     throw new Error(
       `OCU_ADMIN_SESSION_SECRET must be at least ${MIN_SECRET_BYTES} bytes`,
     )

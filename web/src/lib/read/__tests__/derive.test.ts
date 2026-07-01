@@ -62,6 +62,15 @@ describe("ageSeconds — now − reserved_at, floored (design-spec §3 'Age')", 
     const now = new Date("2026-06-27T06:46:02.000Z")
     expect(ageSeconds(live.reserved_at, now)).toBe(60)
   })
+
+  it("clamps to 0 when reserved_at is in the future (clock skew)", () => {
+    // The BFF clock and the control clock can disagree by a few seconds, so a
+    // freshly-reserved row can carry a reserved_at slightly ahead of `now`. The
+    // card must never render a negative age; clamp at 0.
+    const reserved = "2026-06-27T06:00:03.000Z"
+    const now = new Date("2026-06-27T06:00:00.000Z") // -3s
+    expect(ageSeconds(reserved, now)).toBe(0)
+  })
 })
 
 describe("formatAge — compact age chip label", () => {

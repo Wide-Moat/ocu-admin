@@ -6,7 +6,11 @@
 // top-level origin and is never embedded (ADR-0004); HttpOnly so script cannot
 // read the token; Secure so it is never sent over plain HTTP.
 
-export const SESSION_COOKIE = "ocu_admin_session"
+// The `__Host-` prefix makes the browser refuse the cookie unless it is Secure,
+// Path=/, and carries no Domain attribute — exactly the attributes we already
+// emit below — so it binds the cookie to this single origin for free. It is a
+// pure hardening: no consumer reads the literal name, they all import this const.
+export const SESSION_COOKIE = "__Host-ocu_admin_session"
 
 // Seconds. Matches the 8h token TTL — the cookie never outlives the token.
 const MAX_AGE = 8 * 60 * 60

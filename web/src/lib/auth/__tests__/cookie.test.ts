@@ -24,8 +24,8 @@ describe("session cookie attributes", () => {
     expect(opts.maxAge).toBe(8 * 60 * 60)
   })
 
-  it("uses a stable, non-secret cookie name", () => {
-    expect(SESSION_COOKIE).toBe("ocu_admin_session")
+  it("uses a stable, non-secret cookie name with the __Host- prefix", () => {
+    expect(SESSION_COOKIE).toBe("__Host-ocu_admin_session")
   })
 
   it("clears the cookie with maxAge 0 and the same security attributes", () => {
