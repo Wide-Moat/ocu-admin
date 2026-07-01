@@ -81,6 +81,24 @@ anywhere in this repo (the import boundary and the bundle-secrecy walk both red 
 read path that reaches a mutating authority or a UDS marker), so nothing in the
 dashboard path *can* read a live source until the Phase-5 dial lands.
 
+## 8. Operator-sees-all, never per-operator scoping
+
+The console projects **every** session in the deployment; it never filters the
+read by tenant or operator. ADR-0022 fixes this as an accepted limitation —
+"operator-sees-all … with no per-operator scoping of the read" — and per-operator
+scoping is an explicit out-of-v1 open question (#308). A read handler that hides
+a session the operator should see is the failure mode here (an *under-projection*
+hole, not the cross-tenant *over-read* of a multi-tenant UI); and inventing a
+per-tenant filter (an `OCU_ADMIN_OPERATOR_SCOPE`-style env, a `scopeFilter`) is a
+canon violation — a capability the frozen contract does not have, dressed as a
+security boundary it does not claim. Such scoping, if ever wanted, is a canon
+change raised to the architecture repo first (#308), never smuggled into an
+implementation phase. **Guard (live):** the operator-sees-all test calls the
+shipped `GET` export of the sessions handler and asserts the returned tenants
+cover every distinct tenant in the fixture; it reds when a hiding filter is
+planted in the shipped handler (proven by hand-mutation). The read row carries no
+per-operator field for a filter to key on.
+
 This console MUST NOT read a non-canon source. The operator read surface and its
 named read identity must be **accepted on `next/v1`** in the architecture repo
 before any code here reads them:
