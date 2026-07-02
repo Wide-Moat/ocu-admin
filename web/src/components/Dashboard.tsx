@@ -21,16 +21,18 @@
 //   - "loading": a loading indicator (a later phase polls; here it is the
 //     pre-data state).
 //   - "ok" + no sessions: a "No active sessions" empty state.
-// The header chrome (badge · Grafana · logout) and the stats stay visible across
-// all states, so an operator can still read the deployment and reach Grafana /
-// logout when the control plane is down.
+// The header chrome (badge · Grafana · logout) and the stats tiles stay visible
+// across all states, so an operator can still reach Grafana / logout when the
+// control plane is down — but the deployment singletons and both stats are then
+// unknown: the badge and the tile value slots show honest "—" placeholders,
+// never an invented value and never a zero presented as fact.
 //
 // It is a presentational read-only-leaf component: deployment / sessions /
 // histogram / grafanaHref / now / state are all props — it fetches nothing.
-// page.tsx feeds the fixture today; phase 4 swaps the data source at that seam
-// with NO change here. It imports only the read zone (`@/lib/read`), its sibling
-// read components, and React; the import-boundary rule pins that it cannot reach
-// a control-plane authority.
+// page.tsx feeds it from the real read client through loadDashboardData. It
+// imports only the read zone (`@/lib/read`), its sibling read components, and
+// React; the import-boundary rule pins that it cannot reach a control-plane
+// authority.
 //
 // TODO (design-spec §4): a "Show destroyed" filter chip toggling
 // `?include_released` — released tombstones are presently rendered when present
@@ -70,7 +72,7 @@ export function Dashboard({
   now,
   state = "ok",
 }: {
-  deployment: DeploymentView
+  deployment: DeploymentView | null
   sessions: SessionView[]
   histogram: StartHistogram
   grafanaHref: string
@@ -103,8 +105,13 @@ export function Dashboard({
         </div>
       </header>
 
-      {/* The two summary stats — always visible chrome. */}
-      <StatsTiles sessions={sessions} histogram={histogram} />
+      {/* The two summary stats — always-visible chrome; when the read surface
+          is unavailable the tiles render "—" placeholders, not zeros. */}
+      <StatsTiles
+        sessions={sessions}
+        histogram={histogram}
+        unavailable={state === "unavailable"}
+      />
 
       {/* The grid region: one of banner / loading / empty / cards. */}
       <SessionsRegion sessions={sessions} now={now} state={state} />

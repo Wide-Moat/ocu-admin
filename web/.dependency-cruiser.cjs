@@ -8,12 +8,14 @@ module.exports = {
       name: "read-must-not-import-authority",
       severity: "error",
       comment:
-        "The read-only console's read/data module, its BFF surface, AND its " +
-        "presentational components cannot import a mutating authority " +
+        "Nothing in the console may import a mutating authority " +
         "(destroy/revoke/denylist/quota). ocu-admin is a read-only leaf. " +
-        "Covers the real BFF (src/app/api), the read module (src/lib/read), " +
-        "and the dashboard components (src/components) that render read tiles.",
-      from: { path: "^src/(app/api|lib/read|components)" },
+        "Covers the whole app tree (src/app — pages, layout, and the BFF " +
+        "under src/app/api), the read module (src/lib/read), the dashboard " +
+        "components (src/components), and the middleware (src/middleware.ts).",
+      from: {
+        path: ["^src/(app|components|lib/read)/", "^src/middleware\\.ts$"],
+      },
       to: { path: "^src/lib/authority" },
     },
   ],

@@ -87,6 +87,38 @@ describe("StatsTiles — active count edge cases", () => {
   })
 })
 
+describe("StatsTiles — unavailable read surface", () => {
+  // The empty inputs the unavailable path feeds (loadDashboardData's safe
+  // empties, kept for layout stability). The tiles must not present them as
+  // facts: a dead read surface has no session count and no mean.
+  const emptyHistogram: StartHistogram = {
+    buckets: [],
+    sum_seconds: 0,
+    observation_count: 0,
+  }
+
+  it("renders an honest — in both value slots, never a zero", () => {
+    render(<StatsTiles sessions={[]} histogram={emptyHistogram} unavailable />)
+    const active = screen.getByTestId("stat-active-value")
+    const avgStart = screen.getByTestId("stat-avg-start-value")
+    expect(active.textContent).toBe("—")
+    expect(avgStart.textContent).toBe("—")
+    // "0 active sessions" is materially different from "unknown" during an
+    // incident — no zero may leak into either slot.
+    expect(active.textContent).not.toContain("0")
+    expect(avgStart.textContent).not.toContain("0")
+  })
+
+  it("keeps exactly two labelled tiles as visible chrome", () => {
+    render(<StatsTiles sessions={[]} histogram={emptyHistogram} unavailable />)
+    expect(screen.getAllByTestId("stat-tile")).toHaveLength(2)
+    const activeTile = screen.getByTestId("stat-active")
+    const avgTile = screen.getByTestId("stat-avg-start")
+    expect(within(activeTile).getByText(/Active sessions/i)).toBeInTheDocument()
+    expect(within(avgTile).getByText(/Avg start time/i)).toBeInTheDocument()
+  })
+})
+
 describe("StatsTiles — avg-start comes from the histogram, not a row", () => {
   it("ignores a row's active_at when computing avg start time", () => {
     // A single active row whose active_at − reserved_at is a huge 3600s. If the
