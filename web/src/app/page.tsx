@@ -7,7 +7,8 @@
 //
 // This file lives in the read zone (src/app): it imports only the read module
 // (`@/lib/read`) and the read components, never a control-plane authority — the
-// import-boundary rule (`^src/(app/api|lib/read|components)`) pins it.
+// import-boundary rule (from-zone `^src/(app|components|lib/read)/` plus
+// `^src/middleware\.ts$`) pins it.
 //
 // State mapping (§3, §4): loadDashboardData reports state="unavailable" on a
 // ReadUnavailableError (the 503 / BoundedReason path), which becomes

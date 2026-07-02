@@ -26,10 +26,10 @@ import type { DeploymentView, SessionView, StartHistogram } from "./types"
 
 /**
  * The read seam. page.tsx depends on this interface, not a concrete client, so
- * the mock BFF and a future real BFF are interchangeable. Every method is
- * async and read-only; none mutates control-plane state. `includeReleased` on
- * listSessions adds the `?include_released` query param, surfacing released
- * tombstones; absent/false, the list is live rows only.
+ * the BFF routes and any test double are interchangeable behind it. Every
+ * method is async and read-only; none mutates control-plane state.
+ * `includeReleased` on listSessions adds the `?include_released` query param,
+ * surfacing released tombstones; absent/false, the list is live rows only.
  */
 export type ReadClient = {
   listSessions(opts?: { includeReleased?: boolean }): Promise<SessionView[]>
