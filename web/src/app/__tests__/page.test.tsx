@@ -7,12 +7,18 @@ import { describe, it, expect, vi, afterEach } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 
 // page.tsx is the fixture→BFF seam. These tests drive the SHIPPED `Home` server
-// component end to end: they stub `next/headers` (so the server component can
-// resolve an absolute origin) and the global `fetch` (so the in-process HTTP
-// read client hits a canned BFF). A healthy BFF renders the sessions grid;
-// a 503 from the read surface renders the unavailable banner — i.e. page.tsx
-// maps a ReadUnavailableError to <Dashboard state="unavailable">, with no change
-// to the Dashboard component itself.
+// component end to end: they stub `next/headers` (the cookie-forwarding seam)
+// and the global `fetch` (so the in-process HTTP read client hits a canned
+// BFF). A healthy BFF renders the sessions grid; a 503 from the read surface
+// renders the unavailable banner — i.e. page.tsx maps a ReadUnavailableError
+// to <Dashboard state="unavailable">, with no change to the Dashboard
+// component itself.
+//
+// CONTRACT CHANGE: the page no longer derives its self-fetch base from the
+// inbound host / x-forwarded-* headers — it dials the process's own loopback
+// listener at `http://127.0.0.1:${PORT ?? 3000}`. The stubbed inbound headers
+// therefore feed ONLY the cookie forwarding; the loopback pins below prove
+// that no inbound header can steer where the operator's cookie is sent.
 //
 // The cookie pins guard the SSR auth seam: the read paths sit behind the same
 // session gate as the page itself, and the server component's fetch to its own
@@ -20,16 +26,21 @@ import { cleanup, render, screen } from "@testing-library/react"
 // cookie header verbatim on every read — and forward nothing when the inbound
 // request carries no cookie.
 
-// Mutable inbound-request cookie the `next/headers` mock reflects; tests set
-// it, afterEach clears it. (vi.hoisted so the hoisted mock factory can see it.)
-const inbound = vi.hoisted(() => ({ cookie: null as string | null }))
+// Mutable inbound-request state the `next/headers` mock reflects: the cookie
+// and the non-cookie headers (host / x-forwarded-*, hostile in the loopback
+// pins). Tests set them, afterEach resets them. (vi.hoisted so the hoisted
+// mock factory can see it.)
+const inbound = vi.hoisted(() => ({
+  cookie: null as string | null,
+  headers: {
+    host: "console.example",
+    "x-forwarded-proto": "https",
+  } as Record<string, string>,
+}))
 
 vi.mock("next/headers", () => ({
   headers: async () => {
-    const h = new Headers({
-      host: "console.example",
-      "x-forwarded-proto": "https",
-    })
+    const h = new Headers(inbound.headers)
     if (inbound.cookie !== null) {
       h.set("cookie", inbound.cookie)
     }
@@ -40,7 +51,12 @@ vi.mock("next/headers", () => ({
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  vi.unstubAllEnvs()
   inbound.cookie = null
+  inbound.headers = {
+    host: "console.example",
+    "x-forwarded-proto": "https",
+  }
 })
 
 // Route a same-origin BFF fetch to a canned Response keyed by URL suffix.
@@ -67,6 +83,15 @@ function sentCookie([input, init]: Parameters<typeof fetch>): string | null {
     return fromInit
   }
   return input instanceof Request ? input.headers.get("cookie") : null
+}
+
+// The URL a recorded fetch call dialed, from whichever input shape carried it.
+function sentUrl([input]: Parameters<typeof fetch>): string {
+  return typeof input === "string"
+    ? input
+    : input instanceof Request
+      ? input.url
+      : input.toString()
 }
 
 const json = (body: unknown, status = 200): Response =>
@@ -133,6 +158,41 @@ describe("Home page (BFF read seam)", () => {
     expect(fetchMock.mock.calls).toHaveLength(3)
     for (const call of fetchMock.mock.calls) {
       expect(sentCookie(call)).toBeNull()
+    }
+  })
+
+  it("dials only its own loopback listener, never an inbound-header-named host", async () => {
+    // HOSTILE pin: a fronting proxy that passes client-supplied forwarded
+    // headers must not be able to name where the session cookie is sent. The
+    // self-fetch targets this process's own Next listener, so no inbound host
+    // header is ever a legitimate input to the base URL.
+    inbound.headers = {
+      host: "also-evil.example",
+      "x-forwarded-host": "evil.example",
+      "x-forwarded-proto": "https",
+    }
+    inbound.cookie = "__Host-ocu_admin_session=eyJhbGciOi.payload.sig"
+    const fetchMock = installFetch(healthyBff)
+
+    render(await Home())
+
+    expect(fetchMock.mock.calls).toHaveLength(3)
+    for (const call of fetchMock.mock.calls) {
+      const url = sentUrl(call)
+      expect(url).toMatch(/^http:\/\/127\.0\.0\.1:3000\//)
+      expect(url).not.toContain("evil")
+    }
+  })
+
+  it("dials the loopback port from process.env.PORT, read at request time", async () => {
+    vi.stubEnv("PORT", "4321")
+    const fetchMock = installFetch(healthyBff)
+
+    render(await Home())
+
+    expect(fetchMock.mock.calls).toHaveLength(3)
+    for (const call of fetchMock.mock.calls) {
+      expect(sentUrl(call)).toMatch(/^http:\/\/127\.0\.0\.1:4321\//)
     }
   })
 

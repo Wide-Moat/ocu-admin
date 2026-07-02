@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Open Computer Use Contributors
 
 // The console's home route. It builds an HTTP read client pointed at this
-// origin's BFF (`/api/read/*`) — which dials the control plane's read
-// surface — gathers the Dashboard inputs through it, and feeds <Dashboard>.
+// process's own BFF — which dials the control plane's read surface — gathers
+// the Dashboard inputs through it, and feeds <Dashboard>.
 //
 // This file lives in the read zone (src/app): it imports only the read module
 // (`@/lib/read`) and the read components, never a control-plane authority — the
@@ -24,6 +24,12 @@
 // forwards the inbound request's cookie header on every read it issues;
 // without it every SSR read is answered 401 and the dashboard renders
 // permanently "unavailable" even for a logged-in operator.
+//
+// Because that hop carries the operator's session cookie, its destination is
+// never derived from inbound headers: the read hop dials the process's own
+// loopback listener (`http://127.0.0.1:${PORT}`), so no host / x-forwarded-*
+// header a proxy passes through can steer where the cookie is sent. The
+// inbound headers feed the cookie forwarding and nothing else.
 
 import { headers } from "next/headers"
 
@@ -35,17 +41,21 @@ import { loadDashboardData } from "@/lib/read/dashboard-data"
 // config (the console only LINKS to Grafana; it never embeds it — §2.1, §8).
 const GRAFANA_HREF = "https://grafana.example/d/ocu"
 
-// Read the inbound request's headers once: the absolute same-origin base URL
-// for the in-deployment BFF (a server component must dial an absolute URL; the
-// request's host/proto headers give it) and the session cookie to forward.
-async function inboundRequest(): Promise<{
-  baseUrl: string
-  cookie: string | null
-}> {
+// The one thing the read hop takes from the inbound request: the session
+// cookie to forward. No other inbound header is an input to the read path.
+async function inboundCookie(): Promise<string | null> {
   const h = await headers()
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000"
-  const proto = h.get("x-forwarded-proto") ?? "http"
-  return { baseUrl: `${proto}://${host}`, cookie: h.get("cookie") }
+  return h.get("cookie")
+}
+
+// The absolute base URL for the self-fetch: this process's own loopback
+// listener, on the port it was told to listen on (PORT is read here, at
+// request time, not at module load). The BFF routes are served by this same
+// Next server, so the hop never leaves the process's own listener — plain
+// http is correct (TLS terminates upstream), and no inbound header can steer
+// where the operator's cookie is sent.
+function loopbackBaseUrl(): string {
+  return `http://127.0.0.1:${process.env.PORT ?? "3000"}`
 }
 
 // A fetch that carries the forwarded cookie on every request, merged over any
@@ -63,8 +73,8 @@ function withForwardedCookie(cookie: string | null): typeof fetch {
 }
 
 export default async function Home() {
-  const { baseUrl, cookie } = await inboundRequest()
-  const client = createHttpReadClient(baseUrl, {
+  const cookie = await inboundCookie()
+  const client = createHttpReadClient(loopbackBaseUrl(), {
     fetch: withForwardedCookie(cookie),
   })
   const data = await loadDashboardData(client)
