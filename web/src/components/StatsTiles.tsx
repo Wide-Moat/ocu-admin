@@ -11,6 +11,12 @@
 //     reserved_at` of a row (§3, "derived values, never from a row"). The value
 //     is read from the histogram prop, so a row's active_at cannot move it.
 //
+// Unavailable contract: when the caller passes `unavailable` (the read surface
+// is down), the tiles stay visible chrome but render an honest "—" in both
+// value slots. A dead read surface has no session count and no mean start
+// time; a "0" there would present an unknown as a fact during an incident. It
+// never derives a value from the safe empty inputs the unavailable path feeds.
+//
 // It is a presentational read-only-leaf component: sessions + histogram are
 // props, it fetches nothing. It imports only the read zone (`@/lib/read`) and
 // React; the import-boundary rule pins that it cannot reach a control-plane
@@ -20,6 +26,8 @@ import type { ReactElement } from "react"
 
 import { activeCount, avgStartSeconds } from "@/lib/read/derive"
 import type { SessionView, StartHistogram } from "@/lib/read/types"
+
+const UNKNOWN = "—" // em-dash for a stat the read surface cannot vouch for
 
 /**
  * Format an average start time in seconds as a compact "6.5s" figure — one
@@ -74,18 +82,22 @@ function StatTile({
 export function StatsTiles({
   sessions,
   histogram,
+  unavailable = false,
 }: {
   sessions: SessionView[]
   histogram: StartHistogram
+  unavailable?: boolean
 }): ReactElement {
-  const active = activeCount(sessions)
-  const avgStart = formatStartSeconds(avgStartSeconds(histogram))
+  const active = unavailable ? UNKNOWN : String(activeCount(sessions))
+  const avgStart = unavailable
+    ? UNKNOWN
+    : formatStartSeconds(avgStartSeconds(histogram))
 
   return (
     <div className="grid grid-cols-2 gap-3">
       <StatTile
         label="Active sessions"
-        value={String(active)}
+        value={active}
         tileTestid="stat-active"
         valueTestid="stat-active-value"
       />

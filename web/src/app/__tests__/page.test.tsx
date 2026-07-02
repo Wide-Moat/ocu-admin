@@ -153,5 +153,12 @@ describe("Home page (BFF read seam)", () => {
     expect(provider.textContent).not.toContain(
       fixtureDeployment.runtime_provider,
     )
+    // Same honesty for the stat tiles: with the read surface down there is no
+    // session count and no mean start time — both value slots must be "—"
+    // placeholders, never a normal-looking "0" next to the banner.
+    const activeValue = screen.getByTestId("stat-active-value")
+    const avgStartValue = screen.getByTestId("stat-avg-start-value")
+    expect(activeValue.textContent).toBe("—")
+    expect(avgStartValue.textContent).toBe("—")
   })
 })

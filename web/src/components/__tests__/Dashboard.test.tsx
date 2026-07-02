@@ -8,10 +8,9 @@
 // logout), exactly two stats tiles, and a responsive grid of session cards —
 // plus the honest 503/empty/loading states the spec requires. It is
 // presentational: deployment / sessions / histogram / grafanaHref / now / state
-// are props, it fetches nothing (page.tsx feeds the fixture today; phase 4 swaps
-// the source with no change here). These tests drive the component RED-first;
-// they consume the read-zone fixture/derive helpers, never a control-plane
-// authority.
+// are props, it fetches nothing (page.tsx feeds it from the real read client).
+// These tests drive the component RED-first; they consume the read-zone
+// fixture/derive helpers, never a control-plane authority.
 
 import { cleanup, render, screen, within } from "@testing-library/react"
 import { afterEach, describe, it, expect } from "vitest"
@@ -285,6 +284,29 @@ describe("Dashboard — states", () => {
     expect(within(badge).getByTestId("deployment-provider")).toHaveTextContent(
       "—",
     )
+  })
+
+  it("state='unavailable' shows — placeholders in both stat tiles, not zeros", () => {
+    // The 503 path as page.tsx feeds it: empty sessions + a zeroed histogram.
+    // The tiles must render honest "—" placeholders next to the banner — an
+    // operator must never read "Active sessions 0" as a fact over a dead read
+    // surface.
+    render(
+      <Dashboard
+        deployment={null}
+        sessions={[]}
+        histogram={{ buckets: [], sum_seconds: 0, observation_count: 0 }}
+        grafanaHref={GRAFANA}
+        now={NOW}
+        state="unavailable"
+      />,
+    )
+    const active = screen.getByTestId("stat-active-value")
+    const avgStart = screen.getByTestId("stat-avg-start-value")
+    expect(active.textContent).toBe("—")
+    expect(avgStart.textContent).toBe("—")
+    expect(active.textContent).not.toContain("0")
+    expect(avgStart.textContent).not.toContain("0")
   })
 
   it("keeps the header (badge + stats) visible even when unavailable", () => {
