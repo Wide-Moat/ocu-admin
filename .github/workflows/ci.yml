@@ -90,7 +90,7 @@ jobs:
       # banned-vocab line. The Architecture style is mirrored verbatim from
       # canon (one banlist across the fleet).
       - name: vale (error — operator-facing docs)
-        uses: errata-ai/vale-action@d89dee975228ae261d22c15adcd03578634d429c # v2.1.1
+        uses: errata-ai/vale-action@85f9f7f2c5f449ac0ae5b66662961bae3f77ca6a # v2.1.2
         with:
           version: 3.15.1
           files: '["README.md", "CONSTITUTION.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md"]'
@@ -98,7 +98,7 @@ jobs:
       # vale (warning) on GSD artifacts — drift is surfaced, not blocked
       # (mirrors canon applying fail_on_error only to its architecture tree).
       - name: vale (warning — GSD artifacts)
-        uses: errata-ai/vale-action@d89dee975228ae261d22c15adcd03578634d429c # v2.1.1
+        uses: errata-ai/vale-action@85f9f7f2c5f449ac0ae5b66662961bae3f77ca6a # v2.1.2
         with:
           version: 3.15.1
           files: docs/superpowers
