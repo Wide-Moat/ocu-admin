@@ -57,11 +57,13 @@ const STUB_ROW: SessionView = {
 let dir: string
 let socketPath: string
 let server: Server | undefined
+let seenMethods: string[]
 
 type Route = (path: string) => { status: number; body: string }
 
 function serve(route: Route): Promise<void> {
   server = createServer((req, res) => {
+    seenMethods.push(req.method ?? "")
     const { status, body } = route(req.url ?? "")
     res.writeHead(status, { "content-type": "application/json" })
     res.end(body)
@@ -90,6 +92,7 @@ beforeEach(() => {
   // included.
   socketPath = join(dir, "control")
   vi.stubEnv("OCU_ADMIN_CONTROL_SOCKET", socketPath)
+  seenMethods = []
 })
 
 afterEach(async () => {
@@ -103,6 +106,9 @@ afterEach(async () => {
   })
   server = undefined
   rmSync(dir, { recursive: true, force: true })
+  // The read-only leaf emits only GETs, pinned at the socket: every request
+  // that reached the wire in this test must have been a GET.
+  expect(seenMethods.filter((m) => m !== "GET")).toEqual([])
 })
 
 describe("GET /api/read/sessions/[key]", () => {

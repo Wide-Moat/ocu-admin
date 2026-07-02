@@ -20,11 +20,13 @@ import { ReadUnavailableError } from "../client"
 let dir: string
 let socketPath: string
 let server: Server
+let seenMethods: string[]
 
 type Route = (path: string) => { status: number; body: string }
 
 function serve(route: Route): Promise<void> {
   server = createServer((req, res) => {
+    seenMethods.push(req.method ?? "")
     const { status, body } = route(req.url ?? "")
     res.writeHead(status, { "content-type": "application/json" })
     res.end(body)
@@ -35,6 +37,7 @@ function serve(route: Route): Promise<void> {
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "ocu-admin-ctl-"))
   socketPath = join(dir, "operator.sock")
+  seenMethods = []
 })
 
 afterEach(async () => {
@@ -46,6 +49,9 @@ afterEach(async () => {
     }
   })
   rmSync(dir, { recursive: true, force: true })
+  // The read-only leaf emits only GETs, pinned at the socket: every request
+  // that reached the wire in this test must have been a GET.
+  expect(seenMethods.filter((m) => m !== "GET")).toEqual([])
 })
 
 describe("createControlReadClient", () => {

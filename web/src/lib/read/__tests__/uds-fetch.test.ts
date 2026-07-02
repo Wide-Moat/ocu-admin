@@ -19,11 +19,13 @@ import { createUdsFetch } from "../uds-fetch"
 let dir: string
 let socketPath: string
 let server: Server
+let seenMethods: string[]
 
 function listenOnSocket(
   handler: (path: string) => { status: number; body: string },
 ): Promise<void> {
   server = createServer((req, res) => {
+    seenMethods.push(req.method ?? "")
     const { status, body } = handler(req.url ?? "")
     res.writeHead(status, { "content-type": "application/json" })
     res.end(body)
@@ -34,6 +36,7 @@ function listenOnSocket(
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "ocu-admin-uds-"))
   socketPath = join(dir, "operator.sock")
+  seenMethods = []
 })
 
 afterEach(async () => {
@@ -45,6 +48,9 @@ afterEach(async () => {
     }
   })
   rmSync(dir, { recursive: true, force: true })
+  // The read-only leaf emits only GETs, pinned at the socket: every request
+  // that reached the wire in this test must have been a GET.
+  expect(seenMethods.filter((m) => m !== "GET")).toEqual([])
 })
 
 describe("createUdsFetch", () => {
