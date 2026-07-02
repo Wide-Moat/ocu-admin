@@ -246,19 +246,23 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           persist-credentials: false
-      - name: Trivy filesystem scan (CRITICAL, blocking)
+      - name: Trivy filesystem scan (CRITICAL + HIGH, blocking)
         uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
-          severity: CRITICAL
+          severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: false
           skip-dirs: "web/node_modules,.venv,.planning"
+          # Time-bounded exception file: each ignored CVE carries an `exp:`
+          # expiry (policy: <= 14 days out) + a tracking reference, so a
+          # suppression cannot rot silently — it re-reds the gate on expiry.
+          trivyignores: .trivyignore
           format: sarif
           output: trivy-fs.sarif
           limit-severities-for-sarif: true
-      - name: Upload SARIF (CRITICAL)
+      - name: Upload SARIF (CRITICAL + HIGH)
         if: always()
         uses: github/codeql-action/upload-sarif@fee9466b8957867761f2d78f922ab084e3e2dd17 # v3
         with:
