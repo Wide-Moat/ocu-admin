@@ -2,17 +2,20 @@
 // Copyright (c) 2025 Open Computer Use Contributors
 
 // Serialize a StartHistogram into a Prometheus exposition — the inverse of the
-// client's parsePrometheusHistogram. The mock /metrics handler uses it so the
-// fixture histogram is emitted as real Prometheus text, which the client parser
-// reads back to the same histogram (a round-trip the route test pins). The
-// metric name mirrors the reserved->active start-duration histogram the live
-// BFF exposes; a terminal `+Inf` bucket is emitted (its count equals _count),
-// as Prometheus requires, and dropped again on parse.
+// client's parsePrometheusHistogram. The metrics BFF route uses it to re-emit
+// the histogram it read from control as real Prometheus text, which the client
+// parser reads back to the same histogram (a round-trip the route test pins).
+// A terminal `+Inf` bucket is emitted (its count equals _count), as Prometheus
+// requires, and dropped again on parse.
 
 import type { StartHistogram } from "./types"
 
-// The metric the deployment exposes for reserved->active start duration.
-const METRIC = "ocu_session_start_seconds"
+/**
+ * The canonical metric family for reserved->active start duration — the single
+ * source of truth for the name. The serializer emits it and the read client's
+ * parser anchors on it, so both sides always speak about the same family.
+ */
+export const START_HISTOGRAM_METRIC = "ocu_session_start_seconds"
 
 /**
  * Render `h` as a Prometheus histogram exposition: a HELP/TYPE header, the
@@ -21,16 +24,17 @@ const METRIC = "ocu_session_start_seconds"
  * `observation_count`, satisfying Prometheus's terminal-bucket rule.
  */
 export function serializePrometheusHistogram(h: StartHistogram): string {
+  const metric = START_HISTOGRAM_METRIC
   const lines: string[] = [
-    `# HELP ${METRIC} reserved->active start duration in seconds`,
-    `# TYPE ${METRIC} histogram`,
+    `# HELP ${metric} reserved->active start duration in seconds`,
+    `# TYPE ${metric} histogram`,
   ]
   for (const b of h.buckets) {
-    lines.push(`${METRIC}_bucket{le="${formatLe(b.le)}"} ${b.cumulative_count}`)
+    lines.push(`${metric}_bucket{le="${formatLe(b.le)}"} ${b.cumulative_count}`)
   }
-  lines.push(`${METRIC}_bucket{le="+Inf"} ${h.observation_count}`)
-  lines.push(`${METRIC}_sum ${h.sum_seconds}`)
-  lines.push(`${METRIC}_count ${h.observation_count}`)
+  lines.push(`${metric}_bucket{le="+Inf"} ${h.observation_count}`)
+  lines.push(`${metric}_sum ${h.sum_seconds}`)
+  lines.push(`${metric}_count ${h.observation_count}`)
   return lines.join("\n") + "\n"
 }
 

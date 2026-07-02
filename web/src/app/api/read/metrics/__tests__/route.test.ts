@@ -5,7 +5,7 @@
 // REAL unix socket (no mock). This route is text-in/text-out: control serves a
 // Prometheus exposition, the route parses it to a typed StartHistogram and
 // re-serializes it, so the pin parses the ROUTE's response body back with the
-// client parser and demands the STUB's numbers. Four pins:
+// client parser and demands the STUB's numbers. Six pins:
 //
 //  1. GET() returns 200 text/plain whose parsed histogram is exactly what the
 //     control socket served — the stub's buckets/sum/count differ from the
@@ -15,12 +15,18 @@
 //     really proxies, it does not synthesize.
 //  3. Control answers 503 -> the route returns 503, never a 2xx with any body.
 //  4. No socket at the configured path -> the route returns 503, never a 2xx.
+//  5. Control's exposition carries OTHER metric families beside the canon one
+//     (as any real /metrics does) -> the route serves ONLY the canon family's
+//     numbers, never a cross-family chimera.
+//  6. Control answers 200 with a body holding no line of the canon family
+//     (an HTML error page) -> the route answers 502, never a zeroed 200.
 //
-// Pins 3 and 4 are the anti-fail-open probes: a route that silently falls back
-// to the fixture histogram when the control plane is down would hand the
-// operator a healthy-looking average-start-time tile over a dead deployment.
-// The socket path reaches the route only via OCU_ADMIN_CONTROL_SOCKET, so env
-// must be read per request (inside GET), never at module load.
+// Pins 3-6 are the anti-fail-open/anti-fabrication probes: a route that falls
+// back to the fixture histogram, merges foreign families, or zero-fills a
+// garbage body would hand the operator a healthy-looking average-start-time
+// tile that the control plane never reported. The socket path reaches the
+// route only via OCU_ADMIN_CONTROL_SOCKET, so env must be read per request
+// (inside GET), never at module load.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { createServer, type Server } from "node:http"
@@ -29,6 +35,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { GET } from "../route"
 import { parsePrometheusHistogram } from "@/lib/read/client"
+import { START_HISTOGRAM_METRIC } from "@/lib/read/prometheus"
 import type { StartHistogram } from "@/lib/read/types"
 
 // Deliberately NOT the fixture values (fixture: le 2.5/5/7.5/10/30, sum 78,
@@ -56,6 +63,32 @@ const STUB_EXPOSITION =
     "ocu_session_start_seconds_sum 91.5",
     "ocu_session_start_seconds_count 20",
   ].join("\n") + "\n"
+
+// A fleet-realistic exposition: the canon family flanked by a histogram family
+// before it and a summary family after it, all with wildly different numbers —
+// what a real /metrics endpoint always carries (process_/go_/http_ families).
+// The trailing summary catches a last-wins _sum/_count parser; the leading
+// histogram catches a bucket-merging one.
+const MULTI_FAMILY_EXPOSITION =
+  [
+    "# HELP process_request_seconds unrelated request latency",
+    "# TYPE process_request_seconds histogram",
+    'process_request_seconds_bucket{le="0.1"} 1000',
+    'process_request_seconds_bucket{le="0.5"} 4000',
+    'process_request_seconds_bucket{le="+Inf"} 9000',
+    "process_request_seconds_sum 1234.5",
+    "process_request_seconds_count 9000",
+  ].join("\n") +
+  "\n" +
+  STUB_EXPOSITION +
+  [
+    "# HELP go_gc_duration_seconds unrelated gc summary",
+    "# TYPE go_gc_duration_seconds summary",
+    'go_gc_duration_seconds{quantile="0.5"} 0.0001',
+    "go_gc_duration_seconds_sum 0.5",
+    "go_gc_duration_seconds_count 300",
+  ].join("\n") +
+  "\n"
 
 let dir: string
 let socketPath: string
@@ -110,10 +143,36 @@ describe("GET /api/read/metrics", () => {
 
     expect(res.status).toBe(200)
     expect(res.headers.get("content-type")).toContain("text/plain")
-    const h = parsePrometheusHistogram(await res.text())
+    const h = parsePrometheusHistogram(await res.text(), START_HISTOGRAM_METRIC)
     expect(h.buckets).toEqual(STUB_HISTOGRAM.buckets)
     expect(h.sum_seconds).toBe(STUB_HISTOGRAM.sum_seconds)
     expect(h.observation_count).toBe(STUB_HISTOGRAM.observation_count)
+  })
+
+  it("serves only the canon family's numbers when control exposes other families too", async () => {
+    await serve(() => ({ status: 200, body: MULTI_FAMILY_EXPOSITION }))
+
+    const res = await GET()
+
+    expect(res.status).toBe(200)
+    const h = parsePrometheusHistogram(await res.text(), START_HISTOGRAM_METRIC)
+    expect(h.buckets).toEqual(STUB_HISTOGRAM.buckets)
+    expect(h.sum_seconds).toBe(STUB_HISTOGRAM.sum_seconds)
+    expect(h.observation_count).toBe(STUB_HISTOGRAM.observation_count)
+  })
+
+  it("answers 502 when control returns 200 without the start histogram, never a zeroed 200", async () => {
+    // A 200 whose body carries no line of the canon family (an intermediary's
+    // HTML error page) is not the read surface's data: zero-filling it would
+    // fabricate an avg-start-time of 0s in state="ok".
+    await serve(() => ({
+      status: 200,
+      body: "<html><body>login required</body></html>",
+    }))
+
+    const res = await GET()
+
+    expect(res.status).toBe(502)
   })
 
   it("issues GET /metrics over the control socket", async () => {
