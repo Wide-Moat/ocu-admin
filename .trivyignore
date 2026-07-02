@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: FSL-1.1-Apache-2.0
+# Copyright (c) 2025 Open Computer Use Contributors
+#
+# Trivy vulnerability exceptions (SCA — filesystem scan, CRITICAL + HIGH).
+#
+# This file is the ONLY sanctioned way to suppress a CRITICAL/HIGH finding.
+# It is deliberately empty: no exception is active. When one is unavoidable,
+# it must be time-bounded so a suppression cannot rot into a permanent hole.
+#
+# Policy (the 14-day class):
+#   - Every entry MUST carry an `exp:YYYY-MM-DD` expiry no more than 14 days
+#     out. On that date the suppression lapses and the gate re-reds — forcing
+#     a re-decision rather than silent, indefinite acceptance.
+#   - Every entry MUST name a tracking reference (issue / advisory) and a
+#     one-line reason on the comment line above it.
+#   - A no-fix-available CVE is not automatically exempt: prefer bumping,
+#     pinning, or removing the dependency. Suppress only to buy the 14-day
+#     window while the real fix lands.
+#
+# Format (trivy .trivyignore, one CVE id per line, optional trailing `exp:`):
+#   # <reason> — tracked in <issue/url>
+#   CVE-XXXX-NNNNN exp:2026-01-15
+#
+# (no active exceptions)

@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: FSL-1.1-Apache-2.0
+# Copyright (c) 2025 Open Computer Use Contributors
+#
+# Dependabot version updates for the read-only operator console.
+#
+# Two ecosystems:
+#   - npm            → the console (Next.js BFF + UI) lives in web/ (single
+#                      package.json + lock).
+#   - github-actions → the CI workflow pins every action by SHA; Dependabot
+#                      keeps those pins current.
+#
+# Each ecosystem uses a 7-day cooldown: a freshly published release must age a
+# week before Dependabot opens a PR, so a compromised or yanked version has a
+# window to be caught upstream before it reaches this repo.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/web"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "javascript"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github-actions"
