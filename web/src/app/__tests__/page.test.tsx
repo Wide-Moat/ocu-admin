@@ -42,7 +42,7 @@ const json = (body: unknown, status = 200): Response =>
   })
 
 import Home from "../page"
-import { fixtureSessions } from "@/lib/read/fixture"
+import { fixtureDeployment, fixtureSessions } from "@/lib/read/fixture"
 
 const PROM =
   "ocu_session_start_seconds_sum 78\nocu_session_start_seconds_count 12\n"
@@ -77,5 +77,16 @@ describe("Home page (BFF read seam)", () => {
     render(await Home())
     expect(screen.getByTestId("unavailable-banner")).toBeTruthy()
     expect(screen.queryByTestId("sessions-grid")).toBeNull()
+    // No display fail-open: with the read surface down the badge slots must be
+    // honest "—" placeholders — never the fixture deployment's invented
+    // tier/provider presented as fact over a dead deployment.
+    const tier = screen.getByTestId("deployment-tier")
+    const provider = screen.getByTestId("deployment-provider")
+    expect(tier.textContent).toBe("—")
+    expect(provider.textContent).toBe("—")
+    expect(tier.textContent).not.toContain(fixtureDeployment.runtime_tier)
+    expect(provider.textContent).not.toContain(
+      fixtureDeployment.runtime_provider,
+    )
   })
 })

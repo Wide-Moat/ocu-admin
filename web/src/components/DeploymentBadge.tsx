@@ -12,19 +12,26 @@
 // source can flip to a future per-row `tier` with NO UI change — this component
 // renders whatever tier string it is handed.
 //
-// It is a presentational read-only-leaf component: the DeploymentView is a
-// prop, it fetches nothing. It imports only the read zone (`@/lib/read`) and
-// React; the import-boundary rule pins it cannot reach a control-plane
-// authority. NOC styling matches SessionCard (zinc surfaces).
+// Null contract: `deployment` is null when the read surface is unavailable —
+// the badge stays visible header chrome but renders an honest "—" in both
+// slots. It never substitutes a fixture or any other invented value; unknown
+// singletons are shown as unknown.
+//
+// It is a presentational read-only-leaf component: the DeploymentView (or
+// null) is a prop, it fetches nothing. It imports only the read zone
+// (`@/lib/read`) and React; the import-boundary rule pins it cannot reach a
+// control-plane authority. NOC styling matches SessionCard (zinc surfaces).
 
 import type { ReactElement } from "react"
 
 import type { DeploymentView } from "@/lib/read/types"
 
+const UNKNOWN = "—" // em-dash for a singleton the read surface cannot vouch for
+
 export function DeploymentBadge({
   deployment,
 }: {
-  deployment: DeploymentView
+  deployment: DeploymentView | null
 }): ReactElement {
   return (
     <div
@@ -35,13 +42,13 @@ export function DeploymentBadge({
         data-testid="deployment-tier"
         className="rounded border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-zinc-200"
       >
-        {deployment.runtime_tier}
+        {deployment?.runtime_tier ?? UNKNOWN}
       </span>
       <span
         data-testid="deployment-provider"
         className="rounded border border-zinc-800 bg-zinc-900 px-2 py-0.5 text-zinc-400"
       >
-        {deployment.runtime_provider}
+        {deployment?.runtime_provider ?? UNKNOWN}
       </span>
     </div>
   )

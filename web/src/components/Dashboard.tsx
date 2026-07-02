@@ -22,8 +22,9 @@
 //     pre-data state).
 //   - "ok" + no sessions: a "No active sessions" empty state.
 // The header chrome (badge · Grafana · logout) and the stats stay visible across
-// all states, so an operator can still read the deployment and reach Grafana /
-// logout when the control plane is down.
+// all states, so an operator can still reach Grafana / logout when the control
+// plane is down — but the deployment singletons are then unknown (`deployment`
+// is null) and the badge shows honest "—" placeholders, never an invented value.
 //
 // It is a presentational read-only-leaf component: deployment / sessions /
 // histogram / grafanaHref / now / state are all props — it fetches nothing.
@@ -70,7 +71,7 @@ export function Dashboard({
   now,
   state = "ok",
 }: {
-  deployment: DeploymentView
+  deployment: DeploymentView | null
   sessions: SessionView[]
   histogram: StartHistogram
   grafanaHref: string

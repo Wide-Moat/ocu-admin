@@ -61,3 +61,16 @@ describe("DeploymentBadge — over arbitrary tier/provider combos", () => {
     )
   })
 })
+
+describe("DeploymentBadge — null deployment (read unavailable)", () => {
+  it("renders an honest — placeholder in both slots, crashing on nothing", () => {
+    // When the read surface is down the singletons are unknown; the badge
+    // stays visible chrome but never shows an invented tier/provider.
+    render(<DeploymentBadge deployment={null} />)
+    const badge = screen.getByTestId("deployment-badge")
+    expect(within(badge).getByTestId("deployment-tier")).toHaveTextContent("—")
+    expect(within(badge).getByTestId("deployment-provider")).toHaveTextContent(
+      "—",
+    )
+  })
+})

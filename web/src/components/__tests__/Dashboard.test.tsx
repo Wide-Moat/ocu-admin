@@ -265,6 +265,28 @@ describe("Dashboard — states", () => {
     )
   })
 
+  it("unavailable + deployment=null shows the banner and — badge placeholders", () => {
+    // The 503 path as page.tsx feeds it: the read is down, so the deployment
+    // singletons are unknown — the banner renders AND the badge shows honest
+    // "—" placeholders, never a fixture value.
+    render(
+      <Dashboard
+        deployment={null}
+        sessions={[]}
+        histogram={fixtureStartHistogram}
+        grafanaHref={GRAFANA}
+        now={NOW}
+        state="unavailable"
+      />,
+    )
+    expect(screen.getByTestId("unavailable-banner")).toBeInTheDocument()
+    const badge = screen.getByTestId("deployment-badge")
+    expect(within(badge).getByTestId("deployment-tier")).toHaveTextContent("—")
+    expect(within(badge).getByTestId("deployment-provider")).toHaveTextContent(
+      "—",
+    )
+  })
+
   it("keeps the header (badge + stats) visible even when unavailable", () => {
     // The header and stats are the always-present chrome; only the grid region
     // swaps to the banner. The operator can still see the deployment + reach
