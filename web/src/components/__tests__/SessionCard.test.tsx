@@ -102,6 +102,45 @@ describe("SessionCard — active (Live)", () => {
   })
 })
 
+describe("SessionCard — active but not yet enriched (stale/racing projection)", () => {
+  // A schema-valid SessionView the read surface can legitimately emit: the row
+  // has reached `active`, but its activation enrichment (caps, container_name,
+  // active_at) has not landed yet — a racing or momentarily-stale projection.
+  // The card must render the live state honestly and show "—" for every
+  // not-yet-present field, never crash and never leak `undefined` to screen.
+  // Not a fixture row on purpose: the fixture's active rows are fully enriched,
+  // so this combination has no fixture to draw from.
+  const staleActive: SessionView = {
+    key: "sess-stale01",
+    owner: { tenant: "acme", caller: "api-bot" },
+    state: "active",
+    reserved_at: "2026-06-27T06:48:10.000Z",
+    // caps, container_name, active_at all ABSENT despite state === "active".
+  }
+
+  it("renders the 'Live' label even with enrichment absent", () => {
+    render(<SessionCard session={staleActive} now={NOW} />)
+    expect(screen.getByText("Live")).toBeInTheDocument()
+  })
+
+  it("shows '—' for every absent cap and for container_name", () => {
+    render(<SessionCard session={staleActive} now={NOW} />)
+    expect(screen.getByTestId("cap-cpu")).toHaveTextContent("—")
+    expect(screen.getByTestId("cap-ram")).toHaveTextContent("—")
+    expect(screen.getByTestId("cap-pids")).toHaveTextContent("—")
+    expect(screen.getByTestId("container-name")).toHaveTextContent("—")
+  })
+
+  it("still renders the key and an age chip (no undefined leaks to screen)", () => {
+    render(<SessionCard session={staleActive} now={NOW} />)
+    expect(screen.getByText("sess-stale01")).toBeInTheDocument()
+    // Age is derived from reserved_at (always present), not active_at.
+    expect(screen.getByTestId("age-chip")).toHaveTextContent("42s")
+    // No literal "undefined" reached the DOM.
+    expect(screen.queryByText(/undefined/)).not.toBeInTheDocument()
+  })
+})
+
 describe("SessionCard — released (Destroyed)", () => {
   const released = byKey("sess-1a05b7")
 
