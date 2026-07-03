@@ -259,6 +259,76 @@ describe("createHttpReadClient", () => {
   })
 })
 
+describe("createHttpReadClient — read-only leaf: every request is a GET", () => {
+  // The client is a read-only leaf: it issues only GETs. The route handlers
+  // enforce a GET-only wire at the socket (each route test's afterEach), and the
+  // route modules export only GET (verb-shape test). This pins the seam between
+  // them — the client itself — so a method ever creeping into a client fetch
+  // call (a future POST-ing method, a mis-set init) reds here, at the client, not
+  // only downstream. `fetch(url)` with no init leaves the method GET by default;
+  // this asserts no call sets anything else.
+
+  // A fetch stub that records the init of every call it receives, then answers
+  // with whatever the per-suffix route needs so all four methods complete.
+  function recordingFetch(
+    routes: Record<string, () => Response>,
+    calls: { url: string; method: string | undefined }[],
+  ): typeof fetch {
+    return (async (input: string | URL | Request, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input.toString()
+      // A method may ride on the Request object or the init; capture both.
+      const method =
+        init?.method ??
+        (typeof input === "object" && "method" in input
+          ? (input as Request).method
+          : undefined)
+      calls.push({ url, method })
+      for (const [suffix, make] of Object.entries(routes)) {
+        if (url.split("?")[0].endsWith(suffix)) {
+          return make()
+        }
+      }
+      return new Response("not found", { status: 404 })
+    }) as typeof fetch
+  }
+
+  it("uses GET (never a mutating method) on all four read methods", async () => {
+    const calls: { url: string; method: string | undefined }[] = []
+    const client = createHttpReadClient("https://bff.example", {
+      fetch: recordingFetch(
+        {
+          "/v1alpha/sessions": () => json(fixtureSessions),
+          [`/v1alpha/sessions/${fixtureSessions[0].key}`]: () =>
+            json(fixtureSessions[0]),
+          "/v1alpha/deployment": () =>
+            json({ runtime_tier: "firecracker", runtime_provider: "docker" }),
+          "/metrics": () =>
+            new Response(PROM_TEXT, {
+              status: 200,
+              headers: { "content-type": "text/plain" },
+            }),
+        },
+        calls,
+      ),
+    })
+
+    // Drive every method, including the include_released query path.
+    await client.listSessions()
+    await client.listSessions({ includeReleased: true })
+    await client.getSession(fixtureSessions[0].key)
+    await client.getDeployment()
+    await client.getMetrics()
+
+    // Every call reached the stub, and not one carried a mutating method. An
+    // absent method is GET by fetch's default; an explicit method must be GET.
+    expect(calls.length).toBe(5)
+    const mutating = calls.filter(
+      (c) => c.method !== undefined && c.method.toUpperCase() !== "GET",
+    )
+    expect(mutating).toEqual([])
+  })
+})
+
 describe("parsePrometheusHistogram", () => {
   it("parses <metric>_bucket{le=...}, <metric>_sum, <metric>_count into StartHistogram", () => {
     const h = parsePrometheusHistogram(PROM_TEXT, START_HISTOGRAM_METRIC)
