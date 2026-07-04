@@ -13,9 +13,13 @@ import type { StartHistogram } from "./types"
 /**
  * The canonical metric family for reserved->active start duration — the single
  * source of truth for the name. The serializer emits it and the read client's
- * parser anchors on it, so both sides always speak about the same family.
+ * parser anchors on it, so both sides always speak about the same family. This
+ * MUST match the family control emits on its operator /metrics endpoint
+ * (internal/metrics: `ocu_control_session_start_seconds`), namespaced by the
+ * emitting component per Prometheus convention — a name mismatch 502s the
+ * metrics read and degrades the whole dashboard to state=unavailable.
  */
-export const START_HISTOGRAM_METRIC = "ocu_session_start_seconds"
+export const START_HISTOGRAM_METRIC = "ocu_control_session_start_seconds"
 
 /**
  * Render `h` as a Prometheus histogram exposition: a HELP/TYPE header, the

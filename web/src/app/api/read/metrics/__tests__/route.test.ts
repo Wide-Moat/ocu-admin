@@ -54,14 +54,14 @@ const STUB_HISTOGRAM: StartHistogram = {
 // serializer's output, so the route is proven against control-shaped input.
 const STUB_EXPOSITION =
   [
-    "# HELP ocu_session_start_seconds reserved->active start duration in seconds",
-    "# TYPE ocu_session_start_seconds histogram",
-    'ocu_session_start_seconds_bucket{le="1.0"} 2',
-    'ocu_session_start_seconds_bucket{le="4.0"} 7',
-    'ocu_session_start_seconds_bucket{le="15.0"} 19',
-    'ocu_session_start_seconds_bucket{le="+Inf"} 20',
-    "ocu_session_start_seconds_sum 91.5",
-    "ocu_session_start_seconds_count 20",
+    "# HELP ocu_control_session_start_seconds reserved->active start duration in seconds",
+    "# TYPE ocu_control_session_start_seconds histogram",
+    'ocu_control_session_start_seconds_bucket{le="1.0"} 2',
+    'ocu_control_session_start_seconds_bucket{le="4.0"} 7',
+    'ocu_control_session_start_seconds_bucket{le="15.0"} 19',
+    'ocu_control_session_start_seconds_bucket{le="+Inf"} 20',
+    "ocu_control_session_start_seconds_sum 91.5",
+    "ocu_control_session_start_seconds_count 20",
   ].join("\n") + "\n"
 
 // A fleet-realistic exposition: the canon family flanked by a histogram family

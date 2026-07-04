@@ -41,16 +41,16 @@ const json = (body: unknown, status = 200): Response =>
 // a _sum and a _count). The metric name is load-bearing: the parser is anchored
 // to the family it is asked for, so these lines must carry the canonical
 // START_HISTOGRAM_METRIC name.
-const PROM_TEXT = `# HELP ocu_session_start_seconds reserved->active duration
-# TYPE ocu_session_start_seconds histogram
-ocu_session_start_seconds_bucket{le="2.5"} 1
-ocu_session_start_seconds_bucket{le="5.0"} 5
-ocu_session_start_seconds_bucket{le="7.5"} 9
-ocu_session_start_seconds_bucket{le="10.0"} 11
-ocu_session_start_seconds_bucket{le="30.0"} 12
-ocu_session_start_seconds_bucket{le="+Inf"} 12
-ocu_session_start_seconds_sum 78
-ocu_session_start_seconds_count 12
+const PROM_TEXT = `# HELP ocu_control_session_start_seconds reserved->active duration
+# TYPE ocu_control_session_start_seconds histogram
+ocu_control_session_start_seconds_bucket{le="2.5"} 1
+ocu_control_session_start_seconds_bucket{le="5.0"} 5
+ocu_control_session_start_seconds_bucket{le="7.5"} 9
+ocu_control_session_start_seconds_bucket{le="10.0"} 11
+ocu_control_session_start_seconds_bucket{le="30.0"} 12
+ocu_control_session_start_seconds_bucket{le="+Inf"} 12
+ocu_control_session_start_seconds_sum 78
+ocu_control_session_start_seconds_count 12
 `
 
 // A fleet-realistic exposition: the canon family flanked by other families with
@@ -69,10 +69,10 @@ process_request_seconds_count 9000
 `
 
 // The canon family present but never observed: an honest zero, not an absence.
-const ZERO_OBSERVATIONS_TEXT = `# TYPE ocu_session_start_seconds histogram
-ocu_session_start_seconds_bucket{le="+Inf"} 0
-ocu_session_start_seconds_sum 0
-ocu_session_start_seconds_count 0
+const ZERO_OBSERVATIONS_TEXT = `# TYPE ocu_control_session_start_seconds histogram
+ocu_control_session_start_seconds_bucket{le="+Inf"} 0
+ocu_control_session_start_seconds_sum 0
+ocu_control_session_start_seconds_count 0
 `
 
 describe("createHttpReadClient", () => {

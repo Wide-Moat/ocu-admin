@@ -104,7 +104,7 @@ import Home from "../page"
 import { fixtureDeployment, fixtureSessions } from "@/lib/read/fixture"
 
 const PROM =
-  "ocu_session_start_seconds_sum 78\nocu_session_start_seconds_count 12\n"
+  "ocu_control_session_start_seconds_sum 78\nocu_control_session_start_seconds_count 12\n"
 
 // A healthy BFF: canned 200s for the three reads the page issues.
 function healthyBff(url: string): Response {
