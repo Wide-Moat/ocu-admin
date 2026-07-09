@@ -37,7 +37,7 @@
     "@vitest/coverage-v8": "4.1.9",
     "dependency-cruiser": "17.4.3",
     "eslint": "10.5.0",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "16.2.10",
     "globals": "17.7.0",
     "jsdom": "^29.1.1",
     "knip": "6.20.0",
