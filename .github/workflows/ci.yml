@@ -238,7 +238,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Run trufflehog
-        uses: trufflesecurity/trufflehog@0ec3634f6cf66a61912a923fee9d20cc45633a67 # main as of 2026-05-24
+        uses: trufflesecurity/trufflehog@a2ef4f51a5e3644c500f02650db88504cd7d9b68 # main as of 2026-05-24
         with:
           path: ./
           # --no-verification: scan ALL (verified + unverified) without dialing
